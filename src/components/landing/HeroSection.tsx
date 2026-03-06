@@ -35,7 +35,7 @@ const HeroSection = () => {
 
             <div className="flex flex-wrap gap-4">
               <Button size="lg" asChild className="shadow-glow">
-                <Link to="/signup">
+                <Link to="/assessments">
                   Start Free Assessment
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Link>
