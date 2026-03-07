@@ -14,6 +14,11 @@ const Assessments = () => {
             <Link to="/"><ArrowLeft className="w-5 h-5" /></Link>
           </Button>
           <h1 className="font-display font-bold text-lg text-foreground">Developmental Assessments</h1>
+          <div className="ml-auto">
+            <Button size="sm" asChild>
+              <Link to="/intake"><UserPlus className="w-4 h-4 mr-1" /> New Patient</Link>
+            </Button>
+          </div>
         </div>
       </header>
 
