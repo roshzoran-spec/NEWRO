@@ -55,6 +55,51 @@ export type Database = {
           },
         ]
       }
+      child_progress: {
+        Row: {
+          child_id: string
+          created_at: string
+          date_updated: string
+          id: string
+          milestone_id: string
+          response: string
+          user_id: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          date_updated?: string
+          id?: string
+          milestone_id: string
+          response?: string
+          user_id: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          date_updated?: string
+          id?: string
+          milestone_id?: string
+          response?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_progress_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_progress_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "milestone_master"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       children: {
         Row: {
           avatar_url: string | null
@@ -88,6 +133,42 @@ export type Database = {
           notes?: string | null
           parent_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      milestone_master: {
+        Row: {
+          age_month: number
+          category: string
+          created_at: string
+          description: string
+          difficulty: string
+          domain: string
+          id: string
+          priority: string
+          question: string
+        }
+        Insert: {
+          age_month: number
+          category: string
+          created_at?: string
+          description: string
+          difficulty?: string
+          domain: string
+          id: string
+          priority?: string
+          question: string
+        }
+        Update: {
+          age_month?: number
+          category?: string
+          created_at?: string
+          description?: string
+          difficulty?: string
+          domain?: string
+          id?: string
+          priority?: string
+          question?: string
         }
         Relationships: []
       }
