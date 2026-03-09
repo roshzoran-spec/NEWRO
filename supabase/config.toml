@@ -1,1 +1,4 @@
 project_id = "pvbralcrolmwvsvyyjau"
+
+[functions.clinical-report]
+verify_jwt = false
