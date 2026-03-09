@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Download, RotateCcw, AlertTriangle, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
+import { ArrowLeft, Download, RotateCcw, AlertTriangle, CheckCircle2, AlertCircle, XCircle, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
