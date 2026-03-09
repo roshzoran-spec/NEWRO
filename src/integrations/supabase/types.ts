@@ -14,7 +14,154 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assessment_history: {
+        Row: {
+          assessment_type: string
+          child_id: string
+          created_at: string
+          id: string
+          scores: Json | null
+          summary: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          assessment_type: string
+          child_id: string
+          created_at?: string
+          id?: string
+          scores?: Json | null
+          summary?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          assessment_type?: string
+          child_id?: string
+          created_at?: string
+          id?: string
+          scores?: Json | null
+          summary?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_history_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      children: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          date_of_birth: string
+          gender: string | null
+          id: string
+          name: string
+          notes: string | null
+          parent_id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          date_of_birth: string
+          gender?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          parent_id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          date_of_birth?: string
+          gender?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          parent_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string
+          id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string
+          id: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      therapy_reminders: {
+        Row: {
+          child_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_completed: boolean
+          reminder_date: string
+          reminder_type: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean
+          reminder_date: string
+          reminder_type?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean
+          reminder_date?: string
+          reminder_type?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "therapy_reminders_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
