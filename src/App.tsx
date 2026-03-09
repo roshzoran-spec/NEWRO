@@ -34,6 +34,8 @@ const App = () => (
           <Route path="/intake" element={<PatientIntake />} />
           <Route path="/assessment/:id/ai-report" element={<AIReport />} />
           <Route path="/milestones" element={<MilestoneTracker />} />
+          <Route path="/exam/behavioral" element={<BehavioralObservation />} />
+          <Route path="/exam/oro-motor" element={<OroMotorExam />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
