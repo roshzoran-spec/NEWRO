@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Brain, ArrowLeft, Baby, Stethoscope, Building2 } from "lucide-react";
+import { Brain, ArrowLeft, Baby, Stethoscope, Building2, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const roles = [
   { id: "parent", label: "Parent", icon: Baby, desc: "Track your child's growth" },
@@ -17,6 +19,26 @@ const Signup = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { signUp } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    setLoading(true);
+    const { error } = await signUp(email, password, name, selectedRole);
+    setLoading(false);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Account created! Redirecting...");
+      navigate("/dashboard");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
@@ -42,6 +64,7 @@ const Signup = () => {
             {roles.map((r) => (
               <button
                 key={r.id}
+                type="button"
                 onClick={() => setSelectedRole(r.id)}
                 className={`p-3 rounded-xl border-2 text-center transition-all ${
                   selectedRole === r.id
@@ -57,20 +80,21 @@ const Signup = () => {
             ))}
           </div>
 
-          <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" placeholder="Dr. Jane Doe" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input id="name" placeholder="Jane Doe" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
-            <Button className="w-full shadow-glow" size="lg">
+            <Button className="w-full shadow-glow" size="lg" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Account
             </Button>
           </form>
