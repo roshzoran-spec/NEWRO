@@ -3,9 +3,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ParentDashboard from "./pages/ParentDashboard";
 import Assessments from "./pages/Assessments";
 import AssessmentFlow from "./pages/AssessmentFlow";
 import AssessmentResults from "./pages/AssessmentResults";
@@ -24,20 +27,23 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/assessments" element={<Assessments />} />
-          <Route path="/assessment/:id" element={<AssessmentFlow />} />
-          <Route path="/assessment/:id/results" element={<AssessmentResults />} />
-          <Route path="/intake" element={<PatientIntake />} />
-          <Route path="/assessment/:id/ai-report" element={<AIReport />} />
-          <Route path="/milestones" element={<MilestoneTracker />} />
-          <Route path="/exam/behavioral" element={<BehavioralObservation />} />
-          <Route path="/exam/oro-motor" element={<OroMotorExam />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/dashboard" element={<ProtectedRoute><ParentDashboard /></ProtectedRoute>} />
+            <Route path="/assessments" element={<Assessments />} />
+            <Route path="/assessment/:id" element={<AssessmentFlow />} />
+            <Route path="/assessment/:id/results" element={<AssessmentResults />} />
+            <Route path="/intake" element={<PatientIntake />} />
+            <Route path="/assessment/:id/ai-report" element={<AIReport />} />
+            <Route path="/milestones" element={<MilestoneTracker />} />
+            <Route path="/exam/behavioral" element={<BehavioralObservation />} />
+            <Route path="/exam/oro-motor" element={<OroMotorExam />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
