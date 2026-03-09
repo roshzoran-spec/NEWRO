@@ -108,7 +108,7 @@ const ParentDashboard = () => {
     const { error, data } = await supabase.from("children").insert({
       parent_id: user!.id,
       name: newChild.name,
-      date_of_birth: newChild.dob,
+      date_of_birth: dobValue,
       gender: newChild.gender,
       notes: newChild.notes,
     }).select().single();
