@@ -96,8 +96,12 @@ const ParentDashboard = () => {
     if (data) setReminders(data as Reminder[]);
   };
 
+  const dobInputRef = (window as unknown as { __dobInput?: HTMLInputElement }).__dobInput;
+
   const handleAddChild = async () => {
-    if (!newChild.name || !newChild.dob) {
+    // Fallback to DOM value in case controlled state didn't update (e.g. browser date picker)
+    const dobValue = newChild.dob || (document.querySelector('input[type="date"]') as HTMLInputElement)?.value || "";
+    if (!newChild.name || !dobValue) {
       toast.error("Please fill in name and date of birth");
       return;
     }
