@@ -153,6 +153,11 @@ const AssessmentResults = () => {
 
         {/* Actions */}
         <div className="flex flex-wrap gap-3 justify-center">
+          <Button className="shadow-glow gap-2" asChild>
+            <Link to={`/assessment/${id}/ai-report`}>
+              <Brain className="w-4 h-4" /> Generate AI Report
+            </Link>
+          </Button>
           <Button variant="outline" className="gap-2" onClick={() => window.print()}>
             <Download className="w-4 h-4" /> Download Report
           </Button>
@@ -160,9 +165,6 @@ const AssessmentResults = () => {
             <Link to={`/assessment/${id}`}>
               <RotateCcw className="w-4 h-4" /> Retake Assessment
             </Link>
-          </Button>
-          <Button className="shadow-glow" asChild>
-            <Link to="/signup">Create Account to Save</Link>
           </Button>
         </div>
       </div>

@@ -29,6 +29,7 @@ const App = () => (
           <Route path="/assessment/:id" element={<AssessmentFlow />} />
           <Route path="/assessment/:id/results" element={<AssessmentResults />} />
           <Route path="/intake" element={<PatientIntake />} />
+          <Route path="/assessment/:id/ai-report" element={<AIReport />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
