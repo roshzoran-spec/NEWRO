@@ -2,3 +2,6 @@ project_id = "pvbralcrolmwvsvyyjau"
 
 [functions.clinical-report]
 verify_jwt = false
+
+[functions.clinical-narrative]
+verify_jwt = false
