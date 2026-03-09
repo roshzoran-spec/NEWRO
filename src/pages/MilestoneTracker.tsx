@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Baby, Brain, ChevronRight, AlertTriangle, TrendingUp,
-  Lightbulb, Activity, Check, Minus, CircleDot, Star, MessageSquare
+  Lightbulb, Activity, Check, Clock, MessageSquare, Users,
+  Calendar, CheckCircle2, Circle, AlertCircle, BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,433 +13,518 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  Area, AreaChart, Legend, BarChart, Bar, Cell,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend,
 } from "recharts";
-import {
-  milestones, getMilestonesForAge, calculateAchievement,
-  getTrafficLight, generateInsights, getActivityRecommendations,
-  scoreLabels, type MilestoneScore, type MilestoneSession, detectRegression,
-  getProgressData,
-} from "@/data/milestones";
+import { useAuth } from "@/hooks/useAuth";
+import { useMilestones, type ResponseValue } from "@/hooks/useMilestones";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
-const ageOptions = [3, 6, 9, 12, 18, 24, 36, 48, 60, 72];
+const ageOptions = [3, 6, 9, 12, 15, 18, 24, 30, 36, 48, 60, 72];
 
-const trafficColors = {
-  green: { bg: "bg-emerald-50", border: "border-emerald-300", text: "text-emerald-700", dot: "bg-emerald-500" },
-  yellow: { bg: "bg-yellow-50", border: "border-yellow-300", text: "text-yellow-700", dot: "bg-yellow-500" },
-  red: { bg: "bg-red-50", border: "border-red-300", text: "text-red-700", dot: "bg-red-500" },
+const domainConfig = {
+  speech: { label: "Speech & Language", icon: MessageSquare, color: "hsl(var(--primary))" },
+  cognition: { label: "Cognition", icon: Brain, color: "hsl(260, 50%, 60%)" },
+  motor: { label: "Motor", icon: Activity, color: "hsl(var(--accent))" },
+  social: { label: "Social Communication", icon: Users, color: "hsl(200, 60%, 50%)" },
 };
 
-const scoreIcons: Record<number, React.ReactNode> = {
-  0: <Minus className="w-4 h-4" />,
-  1: <CircleDot className="w-4 h-4" />,
-  2: <Check className="w-4 h-4" />,
-  3: <Star className="w-4 h-4" />,
+const responseConfig: Record<ResponseValue, { label: string; icon: React.ReactNode; className: string }> = {
+  yes: { label: "Yes", icon: <CheckCircle2 className="w-4 h-4" />, className: "bg-primary/15 text-primary border-primary/40 hover:bg-primary/25" },
+  emerging: { label: "Emerging", icon: <AlertCircle className="w-4 h-4" />, className: "bg-yellow-100 text-yellow-700 border-yellow-400 hover:bg-yellow-200" },
+  not_yet: { label: "Not Yet", icon: <Circle className="w-4 h-4" />, className: "bg-muted text-muted-foreground border-border hover:bg-muted/80" },
 };
+
+const trafficStyles = {
+  green: { bg: "bg-emerald-50", border: "border-emerald-300", text: "text-emerald-700", dot: "bg-emerald-500", bar: "hsl(150, 60%, 45%)" },
+  yellow: { bg: "bg-yellow-50", border: "border-yellow-300", text: "text-yellow-700", dot: "bg-yellow-500", bar: "hsl(45, 80%, 55%)" },
+  red: { bg: "bg-red-50", border: "border-red-300", text: "text-red-700", dot: "bg-red-500", bar: "hsl(0, 70%, 55%)" },
+};
+
+interface Child {
+  id: string;
+  name: string;
+  date_of_birth: string;
+}
+
+function formatAge(ageMonths: number) {
+  if (ageMonths < 12) return `${ageMonths} months`;
+  const y = Math.floor(ageMonths / 12);
+  const m = ageMonths % 12;
+  return m ? `${y}y ${m}m` : `${y}y`;
+}
+
+function calcAgeMonths(dob: string) {
+  const birth = new Date(dob);
+  const now = new Date();
+  return (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
+}
 
 const MilestoneTracker = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [childName, setChildName] = useState("");
-  const [childAge, setChildAge] = useState<number>(24);
-  const [scores, setScores] = useState<MilestoneScore[]>([]);
-  const [activeTab, setActiveTab] = useState("score");
-  const [sessions, setSessions] = useState<MilestoneSession[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem("newro_milestone_sessions") || "[]");
-    } catch { return []; }
-  });
+  const navigate = useNavigate();
 
-  const speechMilestones = useMemo(() => getMilestonesForAge(childAge, "speech"), [childAge]);
-  const motorMilestones = useMemo(() => getMilestonesForAge(childAge, "motor"), [childAge]);
+  const [children, setChildren] = useState<Child[]>([]);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("checklist");
+  const [activeDomain, setActiveDomain] = useState("speech");
 
-  const speechPct = useMemo(() => calculateAchievement(scores, "speech", childAge), [scores, childAge]);
-  const motorPct = useMemo(() => calculateAchievement(scores, "motor", childAge), [scores, childAge]);
+  const selectedChild = children.find(c => c.id === selectedChildId);
+  const childAgeMonths = selectedChild ? calcAgeMonths(selectedChild.date_of_birth) : 24;
+  // Snap to nearest age window
+  const effectiveAge = useMemo(() => {
+    const sorted = [...ageOptions].sort((a, b) => a - b);
+    for (const a of sorted) {
+      if (childAgeMonths <= a) return a;
+    }
+    return 72;
+  }, [childAgeMonths]);
 
-  const speechTraffic = useMemo(() => getTrafficLight(childAge, scores, "speech"), [childAge, scores]);
-  const motorTraffic = useMemo(() => getTrafficLight(childAge, scores, "motor"), [childAge, scores]);
+  const {
+    milestones, loading, saving,
+    saveResponse, getDomainStats, getDelayStatus,
+    getMilestonesByAge, getResponse,
+    getNextUpdateDate, isUpdateDue,
+  } = useMilestones(selectedChildId, effectiveAge);
 
-  const insights = useMemo(() => generateInsights(scores, childAge), [scores, childAge]);
-  const speechActivities = useMemo(() => getActivityRecommendations(scores, childAge, "speech"), [scores, childAge]);
-  const motorActivities = useMemo(() => getActivityRecommendations(scores, childAge, "motor"), [scores, childAge]);
-
-  const speechRegression = useMemo(() => detectRegression(sessions, "speech"), [sessions]);
-  const motorRegression = useMemo(() => detectRegression(sessions, "motor"), [sessions]);
-
-  const progressData = useMemo(() => getProgressData(sessions), [sessions]);
-
-  // Combined chart data
-  const chartData = useMemo(() => {
-    const ages = new Set<number>();
-    progressData.speech.forEach(d => ages.add(d.age));
-    progressData.motor.forEach(d => ages.add(d.age));
-    return Array.from(ages).sort((a, b) => a - b).map(age => ({
-      age: `${age}m`,
-      ageNum: age,
-      speech: progressData.speech.find(d => d.age === age)?.percentage ?? null,
-      motor: progressData.motor.find(d => d.age === age)?.percentage ?? null,
-    }));
-  }, [progressData]);
-
-  // Bar chart data for current session domains
-  const domainBarData = useMemo(() => {
-    if (scores.length === 0) return [];
-    const categories = new Set<string>();
-    [...speechMilestones, ...motorMilestones].forEach(m => categories.add(m.category));
-    return Array.from(categories).map(cat => {
-      const catMilestones = [...speechMilestones, ...motorMilestones].filter(m => m.category === cat);
-      const maxScore = catMilestones.length * 3;
-      const totalScore = catMilestones.reduce((sum, m) => {
-        const s = scores.find(sc => sc.milestoneId === m.id);
-        return sum + (s ? s.score : 0);
-      }, 0);
-      return { category: cat, percentage: maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0 };
-    });
-  }, [scores, speechMilestones, motorMilestones]);
-
-  const setScore = (milestoneId: string, score: 0 | 1 | 2 | 3) => {
-    setScores(prev => {
-      const existing = prev.findIndex(s => s.milestoneId === milestoneId);
-      if (existing >= 0) {
-        const next = [...prev];
-        next[existing] = { milestoneId, score };
-        return next;
+  // Fetch children
+  useEffect(() => {
+    if (!user) return;
+    const fetch = async () => {
+      const { data } = await supabase.from("children").select("id, name, date_of_birth").eq("parent_id", user.id);
+      if (data && data.length > 0) {
+        setChildren(data);
+        if (!selectedChildId) setSelectedChildId(data[0].id);
       }
-      return [...prev, { milestoneId, score }];
-    });
-  };
-
-  const saveSession = () => {
-    if (!childName.trim()) {
-      toast({ title: "Enter child's name", variant: "destructive" });
-      return;
-    }
-    if (scores.length === 0) {
-      toast({ title: "Score at least one milestone", variant: "destructive" });
-      return;
-    }
-    const session: MilestoneSession = {
-      id: crypto.randomUUID(),
-      childName: childName.trim(),
-      childAgeMonths: childAge,
-      scores: [...scores],
-      createdAt: new Date().toISOString(),
     };
-    const updated = [...sessions, session];
-    setSessions(updated);
-    localStorage.setItem("newro_milestone_sessions", JSON.stringify(updated));
-    toast({ title: "Session saved", description: `Milestone data recorded for ${childName}` });
-    setActiveTab("dashboard");
-  };
+    fetch();
+  }, [user]);
 
-  const renderMilestoneList = (list: typeof speechMilestones, domain: string) => {
-    const grouped: Record<number, typeof list> = {};
-    list.forEach(m => {
-      if (!grouped[m.ageMonth]) grouped[m.ageMonth] = [];
-      grouped[m.ageMonth].push(m);
+  // Domain overview data for bar chart
+  const domainChartData = useMemo(() => {
+    return (Object.keys(domainConfig) as Array<keyof typeof domainConfig>).map(domain => {
+      const stats = getDomainStats(domain);
+      const delay = getDelayStatus(domain);
+      return { domain: domainConfig[domain].label, percentage: stats.percentage, status: delay.status, ...stats };
+    });
+  }, [getDomainStats, getDelayStatus]);
+
+  // Insights
+  const insights = useMemo(() => {
+    const results: string[] = [];
+    const domains = Object.keys(domainConfig) as Array<keyof typeof domainConfig>;
+    const stats = domains.map(d => ({ domain: d, ...getDomainStats(d), delay: getDelayStatus(d) }));
+
+    const allGood = stats.every(s => s.delay.status === "green");
+    if (allGood) results.push("All developmental domains are progressing well for your child's age. Keep up the great work!");
+
+    stats.forEach(s => {
+      if (s.delay.status === "red") {
+        results.push(`${domainConfig[s.domain].label} shows significant delay. Professional evaluation is recommended.`);
+      } else if (s.delay.status === "yellow") {
+        results.push(`${domainConfig[s.domain].label} milestones are emerging but below age expectations. Continue monitoring and stimulation activities.`);
+      }
     });
 
-    return Object.entries(grouped).map(([age, ms]) => (
-      <div key={`${domain}-${age}`} className="mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs font-bold text-primary bg-secondary px-2.5 py-1 rounded-full">
-            {Number(age) < 12 ? `${age}m` : `${Math.floor(Number(age) / 12)}y ${Number(age) % 12 ? `${Number(age) % 12}m` : ""}`}
-          </span>
-          <div className="flex-1 h-px bg-border" />
-        </div>
-        <div className="space-y-2">
-          {ms.map(m => {
-            const currentScore = scores.find(s => s.milestoneId === m.id)?.score;
-            return (
-              <motion.div
-                key={m.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-primary/30 transition-all"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-card-foreground">{m.description}</p>
-                  <p className="text-xs text-muted-foreground">{m.category}</p>
-                </div>
-                <div className="flex gap-1">
-                  {([0, 1, 2, 3] as const).map(val => (
-                    <button
-                      key={val}
-                      onClick={() => setScore(m.id, val)}
-                      className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium transition-all border",
-                        currentScore === val
-                          ? scoreLabels[val].color + " border-current font-bold scale-110"
-                          : "border-border text-muted-foreground hover:border-primary/40"
-                      )}
-                      title={scoreLabels[val].label}
-                    >
-                      {scoreIcons[val]}
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
-    ));
+    // Cross-domain comparison
+    const pcts = stats.map(s => s.percentage);
+    const maxPct = Math.max(...pcts);
+    const minPct = Math.min(...pcts);
+    if (maxPct - minPct > 30) {
+      const weak = stats.find(s => s.percentage === minPct)!;
+      results.push(`${domainConfig[weak.domain].label} is lagging behind other domains. Focused stimulation in this area may help.`);
+    }
+
+    if (results.length === 0) results.push("Development is within expected range. Continue monitoring at regular intervals.");
+    return results;
+  }, [getDomainStats, getDelayStatus]);
+
+  // Activities
+  const getActivities = (domain: string) => {
+    const pct = getDomainStats(domain).percentage;
+    if (domain === "speech") {
+      if (pct < 40) return [
+        { activity: "Sound imitation games — repeat vowels and syllables", target: "Vocalization" },
+        { activity: "Name objects during daily routines", target: "Vocabulary" },
+        { activity: "Read picture books and point to objects", target: "Receptive language" },
+      ];
+      if (pct < 70) return [
+        { activity: "Expand child's utterances (child: 'car' → 'big red car')", target: "Sentence building" },
+        { activity: "Ask choice questions: 'milk or juice?'", target: "Communication" },
+        { activity: "Sing action songs with gestures", target: "Expressive language" },
+      ];
+      return [{ activity: "Story retelling and sequencing activities", target: "Narrative skills" }];
+    }
+    if (domain === "cognition") {
+      if (pct < 40) return [
+        { activity: "Peek-a-boo and object permanence games", target: "Object permanence" },
+        { activity: "Cause-and-effect toys (press button → sound)", target: "Problem solving" },
+      ];
+      if (pct < 70) return [
+        { activity: "Simple puzzles and shape sorters", target: "Problem solving" },
+        { activity: "Pretend play with dolls and toy kitchen", target: "Imaginative thinking" },
+      ];
+      return [{ activity: "Counting games and pattern recognition", target: "Pre-academics" }];
+    }
+    if (domain === "motor") {
+      if (pct < 40) return [
+        { activity: "Supervised tummy time with toys", target: "Core strength" },
+        { activity: "Reaching and grasping games", target: "Fine motor" },
+      ];
+      if (pct < 70) return [
+        { activity: "Obstacle course with pillows and tunnels", target: "Gross motor" },
+        { activity: "Stacking and building with blocks", target: "Fine motor precision" },
+      ];
+      return [{ activity: "Balance beam and hopping games", target: "Coordination" }];
+    }
+    // social
+    if (pct < 40) return [
+      { activity: "Face-to-face interactive games", target: "Social engagement" },
+      { activity: "Mirror play and emotion naming", target: "Emotional awareness" },
+    ];
+    if (pct < 70) return [
+      { activity: "Turn-taking games with peers", target: "Social rules" },
+      { activity: "Role-play scenarios with dolls", target: "Empathy" },
+    ];
+    return [{ activity: "Group play and cooperative games", target: "Social skills" }];
   };
 
-  const TrafficLightCard = ({ domain, traffic, pct }: {
-    domain: string;
-    traffic: ReturnType<typeof getTrafficLight>;
-    pct: number;
-  }) => {
-    const c = trafficColors[traffic.status];
+  if (!user) {
     return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className={cn("rounded-2xl border-2 p-5", c.bg, c.border)}
-      >
-        <div className="flex items-center gap-3 mb-3">
-          <div className={cn("w-4 h-4 rounded-full animate-pulse-soft", c.dot)} />
-          <h4 className={cn("font-display font-bold", c.text)}>{domain}</h4>
-          <span className={cn("ml-auto text-2xl font-display font-bold", c.text)}>{pct}%</span>
-        </div>
-        <div className="h-3 rounded-full bg-white/60 overflow-hidden mb-2">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${pct}%` }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            className={cn("h-full rounded-full", c.dot)}
-          />
-        </div>
-        <p className={cn("text-xs", c.text)}>{traffic.label} — {traffic.description}</p>
-      </motion.div>
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
+        <Card className="max-w-md w-full mx-4">
+          <CardContent className="p-8 text-center space-y-4">
+            <Baby className="w-16 h-16 text-primary mx-auto" />
+            <h2 className="font-display font-bold text-xl text-foreground">Sign in to Track Milestones</h2>
+            <p className="text-muted-foreground text-sm">Create an account and add your child's profile to start tracking developmental milestones.</p>
+            <div className="flex gap-3 justify-center">
+              <Button variant="outline" asChild><Link to="/login">Sign In</Link></Button>
+              <Button asChild><Link to="/signup">Sign Up</Link></Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
-  };
+  }
+
+  if (children.length === 0 && !loading) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
+        <Card className="max-w-md w-full mx-4">
+          <CardContent className="p-8 text-center space-y-4">
+            <Baby className="w-16 h-16 text-primary mx-auto" />
+            <h2 className="font-display font-bold text-xl text-foreground">Add a Child Profile First</h2>
+            <p className="text-muted-foreground text-sm">Go to your dashboard to add your child's profile, then come back to track milestones.</p>
+            <Button asChild><Link to="/dashboard">Go to Dashboard</Link></Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-hero">
+      {/* Header */}
       <header className="border-b border-border bg-background/80 backdrop-blur-lg sticky top-0 z-30">
         <div className="container mx-auto flex items-center h-16 px-4 gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link to="/"><ArrowLeft className="w-5 h-5" /></Link>
+            <Link to="/dashboard"><ArrowLeft className="w-5 h-5" /></Link>
           </Button>
           <Baby className="w-5 h-5 text-primary" />
           <h1 className="font-display font-bold text-lg text-foreground">Milestone Tracker</h1>
+          {saving && <span className="ml-auto text-xs text-muted-foreground animate-pulse">Saving...</span>}
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
-        {/* Child info bar */}
-        <Card className="mb-8 border-2">
+      <div className="container mx-auto px-4 py-6 max-w-5xl space-y-6">
+        {/* Child selector + Age info */}
+        <Card className="border-2">
           <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-wrap gap-4 items-end">
-              <div className="flex-1 min-w-[180px] space-y-2">
-                <Label>Child's Name</Label>
-                <Input value={childName} onChange={e => setChildName(e.target.value)} placeholder="Enter name" className="bg-background" />
-              </div>
-              <div className="w-40 space-y-2">
-                <Label>Age</Label>
-                <Select value={String(childAge)} onValueChange={v => { setChildAge(Number(v)); setScores([]); }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+            <div className="flex flex-wrap gap-4 items-center">
+              <div className="flex-1 min-w-[200px] space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Select Child</label>
+                <Select value={selectedChildId || ""} onValueChange={setSelectedChildId}>
+                  <SelectTrigger><SelectValue placeholder="Choose child" /></SelectTrigger>
                   <SelectContent>
-                    {ageOptions.map(a => (
-                      <SelectItem key={a} value={String(a)}>
-                        {a < 12 ? `${a} months` : `${Math.floor(a / 12)}y ${a % 12 ? `${a % 12}m` : ""}`}
-                      </SelectItem>
+                    {children.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">
-                  {speechMilestones.length + motorMilestones.length} milestones to track
-                </p>
-              </div>
+              {selectedChild && (
+                <>
+                  <div className="text-center px-4">
+                    <p className="text-2xl font-display font-bold text-primary">{formatAge(childAgeMonths)}</p>
+                    <p className="text-xs text-muted-foreground">Current Age</p>
+                  </div>
+                  <div className="text-center px-4">
+                    <p className="text-lg font-display font-bold text-foreground">{milestones.length}</p>
+                    <p className="text-xs text-muted-foreground">Milestones to Track</p>
+                  </div>
+                  {isUpdateDue() && (
+                    <Badge variant="destructive" className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> Update Due
+                    </Badge>
+                  )}
+                  {!isUpdateDue() && getNextUpdateDate() && (
+                    <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                      <Calendar className="w-3 h-3" /> Next: {getNextUpdateDate()!.toLocaleDateString()}
+                    </Badge>
+                  )}
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-3 mb-8">
-            <TabsTrigger value="score">Score Milestones</TabsTrigger>
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger>
-          </TabsList>
+        {selectedChild && (
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="w-full grid grid-cols-3 mb-6">
+              <TabsTrigger value="checklist">Checklist</TabsTrigger>
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="insights">AI Insights</TabsTrigger>
+            </TabsList>
 
-          {/* === SCORING TAB === */}
-          <TabsContent value="score">
-            <div className="grid lg:grid-cols-2 gap-8">
-              {/* Speech */}
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <MessageSquare className="w-5 h-5 text-primary" />
-                  <h3 className="font-display font-bold text-lg text-foreground">Speech & Language</h3>
-                  <span className="ml-auto text-sm text-muted-foreground">{speechMilestones.length} items</span>
-                </div>
-                {renderMilestoneList(speechMilestones, "speech")}
-              </div>
-              {/* Motor */}
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Activity className="w-5 h-5 text-accent" />
-                  <h3 className="font-display font-bold text-lg text-foreground">Motor</h3>
-                  <span className="ml-auto text-sm text-muted-foreground">{motorMilestones.length} items</span>
-                </div>
-                {renderMilestoneList(motorMilestones, "motor")}
-              </div>
-            </div>
-
-            {/* Save button */}
-            <div className="mt-8 flex justify-center">
-              <Button size="lg" className="shadow-glow px-8" onClick={saveSession}>
-                Save Session & View Dashboard <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-
-            {/* Score legend */}
-            <div className="mt-6 flex flex-wrap justify-center gap-4 text-xs">
-              {([0, 1, 2, 3] as const).map(v => (
-                <div key={v} className="flex items-center gap-1.5">
-                  <span className={cn("w-6 h-6 rounded flex items-center justify-center", scoreLabels[v].color)}>
-                    {scoreIcons[v]}
-                  </span>
-                  {scoreLabels[v].label}
-                </div>
-              ))}
-            </div>
-          </TabsContent>
-
-          {/* === DASHBOARD TAB === */}
-          <TabsContent value="dashboard">
-            <AnimatePresence>
-              {scores.length === 0 ? (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
-                  <Baby className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-                  <p className="text-muted-foreground">Score milestones first to see the dashboard</p>
-                </motion.div>
-              ) : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-                  {/* Traffic lights */}
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <TrafficLightCard domain="Speech & Language" traffic={speechTraffic} pct={speechPct} />
-                    <TrafficLightCard domain="Motor Development" traffic={motorTraffic} pct={motorPct} />
-                  </div>
-
-                  {/* Regression alerts */}
-                  {(speechRegression.hasRegression || motorRegression.hasRegression) && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="rounded-xl bg-destructive/10 border-2 border-destructive/30 p-4"
+            {/* === CHECKLIST TAB === */}
+            <TabsContent value="checklist">
+              {/* Domain tabs */}
+              <div className="flex gap-2 flex-wrap mb-6">
+                {(Object.keys(domainConfig) as Array<keyof typeof domainConfig>).map(domain => {
+                  const cfg = domainConfig[domain];
+                  const stats = getDomainStats(domain);
+                  const Icon = cfg.icon;
+                  return (
+                    <button
+                      key={domain}
+                      onClick={() => setActiveDomain(domain)}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border",
+                        activeDomain === domain
+                          ? "bg-primary text-primary-foreground border-primary shadow-glow"
+                          : "bg-card text-muted-foreground border-border hover:border-primary/40"
+                      )}
                     >
-                      <div className="flex items-center gap-2 mb-2">
-                        <AlertTriangle className="w-5 h-5 text-destructive" />
-                        <h4 className="font-display font-bold text-destructive">Regression Alert</h4>
+                      <Icon className="w-4 h-4" />
+                      {cfg.label}
+                      <span className={cn(
+                        "text-xs px-1.5 py-0.5 rounded-full",
+                        activeDomain === domain ? "bg-primary-foreground/20" : "bg-muted"
+                      )}>
+                        {stats.achieved}/{stats.total}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Milestone questions */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeDomain}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                >
+                  {Object.entries(getMilestonesByAge(activeDomain))
+                    .sort(([a], [b]) => Number(a) - Number(b))
+                    .map(([age, ms]) => (
+                      <div key={`${activeDomain}-${age}`} className="mb-8">
+                        <div className="flex items-center gap-2 mb-4">
+                          <span className="text-xs font-bold text-primary bg-secondary px-3 py-1 rounded-full">
+                            {formatAge(Number(age))}
+                          </span>
+                          <div className="flex-1 h-px bg-border" />
+                        </div>
+                        <div className="space-y-3">
+                          {ms.map((m, idx) => {
+                            const currentResponse = getResponse(m.id);
+                            return (
+                              <motion.div
+                                key={m.id}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.03 }}
+                                className="p-4 rounded-xl bg-card border border-border hover:border-primary/20 transition-all"
+                              >
+                                <p className="text-sm font-medium text-card-foreground mb-3">{m.question}</p>
+                                <div className="flex gap-2 flex-wrap">
+                                  {(["yes", "emerging", "not_yet"] as const).map(val => {
+                                    const cfg = responseConfig[val];
+                                    return (
+                                      <button
+                                        key={val}
+                                        onClick={() => saveResponse(m.id, val)}
+                                        className={cn(
+                                          "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all",
+                                          currentResponse === val
+                                            ? cfg.className + " ring-2 ring-offset-1 ring-current scale-105"
+                                            : "border-border text-muted-foreground hover:border-primary/30 bg-background"
+                                        )}
+                                      >
+                                        {cfg.icon} {cfg.label}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </motion.div>
+                            );
+                          })}
+                        </div>
                       </div>
-                      {speechRegression.hasRegression && <p className="text-sm text-destructive mb-1">⚠️ {speechRegression.details}</p>}
-                      {motorRegression.hasRegression && <p className="text-sm text-destructive">⚠️ {motorRegression.details}</p>}
-                    </motion.div>
-                  )}
+                    ))}
+                </motion.div>
+              </AnimatePresence>
+            </TabsContent>
 
-                  {/* Domain bar chart */}
+            {/* === DASHBOARD TAB === */}
+            <TabsContent value="dashboard">
+              <div className="space-y-6">
+                {/* Traffic light cards */}
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {(Object.keys(domainConfig) as Array<keyof typeof domainConfig>).map(domain => {
+                    const stats = getDomainStats(domain);
+                    const delay = getDelayStatus(domain);
+                    const style = trafficStyles[delay.status];
+                    const Icon = domainConfig[domain].icon;
+                    return (
+                      <motion.div
+                        key={domain}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className={cn("rounded-2xl border-2 p-4", style.bg, style.border)}
+                      >
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className={cn("w-3 h-3 rounded-full animate-pulse", style.dot)} />
+                          <Icon className={cn("w-4 h-4", style.text)} />
+                          <span className={cn("text-sm font-bold", style.text)}>{domainConfig[domain].label}</span>
+                        </div>
+                        <div className="text-3xl font-display font-bold mb-1" style={{ color: style.bar }}>{stats.percentage}%</div>
+                        <div className="h-2 rounded-full bg-white/60 overflow-hidden mb-2">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${stats.percentage}%` }}
+                            transition={{ duration: 0.8, ease: "easeOut" }}
+                            className={cn("h-full rounded-full", style.dot)}
+                          />
+                        </div>
+                        <p className={cn("text-xs", style.text)}>
+                          {stats.achieved} achieved · {stats.emerging} emerging · {stats.notYet} pending
+                        </p>
+                        <p className={cn("text-xs mt-1 font-medium", style.text)}>{delay.label}</p>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+
+                {/* Domain comparison chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <BarChart3 className="w-5 h-5 text-primary" /> Domain Comparison
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <BarChart data={domainChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="domain" tick={{ fontSize: 11 }} />
+                        <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
+                        <Tooltip formatter={(v: number) => [`${v}%`, "Achievement"]} />
+                        <Bar dataKey="percentage" radius={[6, 6, 0, 0]}>
+                          {domainChartData.map((d, i) => (
+                            <Cell key={i} fill={trafficStyles[d.status].bar} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Milestone summary */}
+                <div className="grid sm:grid-cols-2 gap-4">
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Domain Breakdown</CardTitle>
-                    </CardHeader>
+                    <CardHeader><CardTitle className="text-base text-primary flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Achieved</CardTitle></CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height={280}>
-                        <BarChart data={domainBarData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                          <XAxis dataKey="category" tick={{ fontSize: 11 }} angle={-20} textAnchor="end" height={60} />
-                          <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-                          <Tooltip formatter={(v: number) => [`${v}%`, "Achievement"]} />
-                          <Bar dataKey="percentage" radius={[6, 6, 0, 0]}>
-                            {domainBarData.map((d, i) => (
-                              <Cell
-                                key={i}
-                                fill={d.percentage >= 80 ? "hsl(var(--primary))" : d.percentage >= 50 ? "hsl(45, 80%, 55%)" : "hsl(var(--destructive))"}
-                              />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
+                      <ul className="space-y-1.5 max-h-60 overflow-y-auto">
+                        {milestones.filter(m => getResponse(m.id) === "yes").map(m => (
+                          <li key={m.id} className="flex items-start gap-2 text-xs text-foreground">
+                            <Check className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                            <span>{m.description}</span>
+                          </li>
+                        ))}
+                        {milestones.filter(m => getResponse(m.id) === "yes").length === 0 && (
+                          <p className="text-xs text-muted-foreground">No milestones achieved yet</p>
+                        )}
+                      </ul>
                     </CardContent>
                   </Card>
-
-                  {/* Progress over time */}
-                  {chartData.length > 1 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Progress Over Time</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ResponsiveContainer width="100%" height={300}>
-                          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                            <defs>
-                              <linearGradient id="speechGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                              </linearGradient>
-                              <linearGradient id="motorGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                            <XAxis dataKey="age" tick={{ fontSize: 12 }} />
-                            <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
-                            <Tooltip />
-                            <Legend />
-                            <Area type="monotone" dataKey="speech" name="Speech" stroke="hsl(var(--primary))" fill="url(#speechGrad)" strokeWidth={2.5} dot={{ r: 5, fill: "hsl(var(--primary))" }} connectNulls />
-                            <Area type="monotone" dataKey="motor" name="Motor" stroke="hsl(var(--accent))" fill="url(#motorGrad)" strokeWidth={2.5} dot={{ r: 5, fill: "hsl(var(--accent))" }} connectNulls />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* AI Insights */}
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-lg">
-                        <Brain className="w-5 h-5 text-primary" /> AI Insights
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {insights.map((insight, i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.1 }}
-                          className="flex items-start gap-3 p-3 rounded-xl bg-secondary/50 border border-border"
-                        >
-                          <Lightbulb className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                          <p className="text-sm text-foreground">{insight}</p>
-                        </motion.div>
-                      ))}
+                    <CardHeader><CardTitle className="text-base text-yellow-600 flex items-center gap-2"><AlertCircle className="w-4 h-4" /> Emerging</CardTitle></CardHeader>
+                    <CardContent>
+                      <ul className="space-y-1.5 max-h-60 overflow-y-auto">
+                        {milestones.filter(m => getResponse(m.id) === "emerging").map(m => (
+                          <li key={m.id} className="flex items-start gap-2 text-xs text-foreground">
+                            <AlertCircle className="w-3.5 h-3.5 text-yellow-500 shrink-0 mt-0.5" />
+                            <span>{m.description}</span>
+                          </li>
+                        ))}
+                        {milestones.filter(m => getResponse(m.id) === "emerging").length === 0 && (
+                          <p className="text-xs text-muted-foreground">None emerging yet</p>
+                        )}
+                      </ul>
                     </CardContent>
                   </Card>
+                </div>
+              </div>
+            </TabsContent>
 
-                  {/* Activity Recommendations */}
-                  <div className="grid sm:grid-cols-2 gap-6">
-                    {[
-                      { title: "Speech Activities", activities: speechActivities, icon: <MessageSquare className="w-4 h-4 text-primary" /> },
-                      { title: "Motor Activities", activities: motorActivities, icon: <Activity className="w-4 h-4 text-accent" /> },
-                    ].map(section => (
-                      <Card key={section.title}>
+            {/* === INSIGHTS TAB === */}
+            <TabsContent value="insights">
+              <div className="space-y-6">
+                {/* AI Insights */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Brain className="w-5 h-5 text-primary" /> Development Insights
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {insights.map((insight, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                        className="flex items-start gap-3 p-3 rounded-xl bg-secondary/50 border border-border"
+                      >
+                        <Lightbulb className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                        <p className="text-sm text-foreground">{insight}</p>
+                      </motion.div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                {/* Activities per domain */}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {(Object.keys(domainConfig) as Array<keyof typeof domainConfig>).map(domain => {
+                    const cfg = domainConfig[domain];
+                    const Icon = cfg.icon;
+                    const activities = getActivities(domain);
+                    return (
+                      <Card key={domain}>
                         <CardHeader>
                           <CardTitle className="flex items-center gap-2 text-base">
-                            {section.icon} {section.title}
+                            <Icon className="w-4 h-4" style={{ color: cfg.color }} />
+                            {cfg.label} Activities
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-3">
-                          {section.activities.map((a, i) => (
+                        <CardContent className="space-y-2">
+                          {activities.map((a, i) => (
                             <div key={i} className="p-3 rounded-lg bg-muted/50 border border-border">
                               <p className="text-sm font-medium text-foreground">{a.activity}</p>
                               <p className="text-xs text-muted-foreground mt-1">Target: {a.target}</p>
@@ -446,106 +532,36 @@ const MilestoneTracker = () => {
                           ))}
                         </CardContent>
                       </Card>
-                    ))}
-                  </div>
+                    );
+                  })}
+                </div>
 
-                  {/* Milestones achieved/pending */}
-                  <div className="grid sm:grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader><CardTitle className="text-base text-primary">✔ Milestones Achieved</CardTitle></CardHeader>
-                      <CardContent>
-                        <ul className="space-y-2 max-h-60 overflow-y-auto">
-                          {[...speechMilestones, ...motorMilestones]
-                            .filter(m => { const s = scores.find(sc => sc.milestoneId === m.id); return s && s.score >= 2; })
-                            .map(m => (
-                              <li key={m.id} className="flex items-center gap-2 text-sm text-foreground">
-                                <Check className="w-4 h-4 text-primary shrink-0" />
-                                {m.description}
-                              </li>
-                            ))}
-                        </ul>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader><CardTitle className="text-base text-muted-foreground">○ Milestones Pending</CardTitle></CardHeader>
-                      <CardContent>
-                        <ul className="space-y-2 max-h-60 overflow-y-auto">
-                          {[...speechMilestones, ...motorMilestones]
-                            .filter(m => { const s = scores.find(sc => sc.milestoneId === m.id); return !s || s.score < 2; })
-                            .map(m => (
-                              <li key={m.id} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <CircleDot className="w-4 h-4 shrink-0" />
-                                {m.description}
-                              </li>
-                            ))}
-                        </ul>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </TabsContent>
-
-          {/* === HISTORY TAB === */}
-          <TabsContent value="history">
-            {sessions.length === 0 ? (
-              <div className="text-center py-20">
-                <TrendingUp className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-                <p className="text-muted-foreground">No sessions recorded yet. Score milestones and save to track progress over time.</p>
+                {/* 15-day update reminder */}
+                <Card className="border-2 border-primary/30">
+                  <CardContent className="p-6 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Calendar className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-display font-bold text-foreground">15-Day Update Cycle</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {isUpdateDue()
+                          ? "It's time to update your child's milestone progress! Review the checklist and update any changes."
+                          : `Next update due: ${getNextUpdateDate()?.toLocaleDateString() || "Start tracking to begin the cycle"}`
+                        }
+                      </p>
+                    </div>
+                    {isUpdateDue() && (
+                      <Button onClick={() => setActiveTab("checklist")} className="shadow-glow">
+                        Update Now <ChevronRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {[...sessions].reverse().map(s => (
-                  <Card key={s.id} className="hover:border-primary/30 transition-colors">
-                    <CardContent className="p-4 flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center">
-                        <Baby className="w-6 h-6 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-display font-bold text-card-foreground">{s.childName}</h4>
-                        <p className="text-xs text-muted-foreground">
-                          Age: {s.childAgeMonths}m • {s.scores.length} milestones scored •{" "}
-                          {new Date(s.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-primary">
-                          S: {calculateAchievement(s.scores, "speech", s.childAgeMonths)}%
-                        </p>
-                        <p className="text-sm font-bold text-accent">
-                          M: {calculateAchievement(s.scores, "motor", s.childAgeMonths)}%
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-
-                {/* Historical trend chart */}
-                {chartData.length > 0 && (
-                  <Card className="mt-6">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Development Trend</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                          <XAxis dataKey="age" tick={{ fontSize: 12 }} />
-                          <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
-                          <Tooltip />
-                          <Legend />
-                          <Line type="monotone" dataKey="speech" name="Speech" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={{ r: 5 }} connectNulls />
-                          <Line type="monotone" dataKey="motor" name="Motor" stroke="hsl(var(--accent))" strokeWidth={2.5} dot={{ r: 5 }} connectNulls />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
     </div>
   );
