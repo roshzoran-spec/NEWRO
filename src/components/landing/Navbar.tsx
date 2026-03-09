@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Brain, Menu, X } from "lucide-react";
+import { Brain, Menu, X, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user } = useAuth();
 
   const links = [
     { label: "Features", href: "#features" },
@@ -37,12 +39,23 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" asChild>
-            <Link to="/login">Log in</Link>
-          </Button>
-          <Button asChild>
-            <Link to="/signup">Get Started</Link>
-          </Button>
+          {user ? (
+            <Button asChild>
+              <Link to="/dashboard">
+                <LayoutDashboard className="w-4 h-4 mr-2" />
+                Dashboard
+              </Link>
+            </Button>
+          ) : (
+            <>
+              <Button variant="ghost" asChild>
+                <Link to="/login">Log in</Link>
+              </Button>
+              <Button asChild>
+                <Link to="/signup">Get Started</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
@@ -70,12 +83,23 @@ const Navbar = () => {
                 </a>
               ))}
               <div className="flex gap-3 pt-2">
-                <Button variant="ghost" asChild className="flex-1">
-                  <Link to="/login">Log in</Link>
-                </Button>
-                <Button asChild className="flex-1">
-                  <Link to="/signup">Get Started</Link>
-                </Button>
+                {user ? (
+                  <Button asChild className="flex-1">
+                    <Link to="/dashboard">
+                      <LayoutDashboard className="w-4 h-4 mr-2" />
+                      Dashboard
+                    </Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="ghost" asChild className="flex-1">
+                      <Link to="/login">Log in</Link>
+                    </Button>
+                    <Button asChild className="flex-1">
+                      <Link to="/signup">Get Started</Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>
