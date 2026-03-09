@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Clock, FileQuestion, ChevronRight, UserPlus } from "lucide-react";
+import { ArrowLeft, Clock, FileQuestion, ChevronRight, UserPlus, Eye, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { assessmentTypes } from "@/data/assessments";
 
