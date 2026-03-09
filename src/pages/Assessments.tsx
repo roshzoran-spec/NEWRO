@@ -72,6 +72,46 @@ const Assessments = () => {
           ))}
         </div>
 
+        {/* Clinical Examinations */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-14 max-w-4xl mx-auto"
+        >
+          <h3 className="font-display text-xl font-bold text-center mb-6">
+            Clinical <span className="text-gradient-primary">Examination Modules</span>
+          </h3>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Link
+              to="/exam/behavioral"
+              className="flex items-center gap-4 rounded-2xl bg-card border-2 border-primary/20 hover:border-primary/50 p-5 transition-all hover:shadow-lg group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+                <Eye className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-display font-bold text-card-foreground">Behavioral Observation</h4>
+                <p className="text-xs text-muted-foreground">Eye contact, joint attention, play, sensory behaviors — 20 parameters</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+            </Link>
+            <Link
+              to="/exam/oro-motor"
+              className="flex items-center gap-4 rounded-2xl bg-card border-2 border-accent/20 hover:border-accent/50 p-5 transition-all hover:shadow-lg group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-coral-light flex items-center justify-center shrink-0">
+                <Stethoscope className="w-6 h-6 text-coral" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-display font-bold text-card-foreground">Oro-Motor & Cranial Nerve</h4>
+                <p className="text-xs text-muted-foreground">Lip, tongue, jaw, palatal function + CN V, VII, IX, X, XII — 36 parameters</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-accent transition-colors shrink-0" />
+            </Link>
+          </div>
+        </motion.div>
+
         <div className="text-center mt-10">
           <p className="text-xs text-muted-foreground max-w-md mx-auto">
             These screenings are for informational purposes and do not replace professional clinical evaluation. Consult a specialist for diagnosis.
