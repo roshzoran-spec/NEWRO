@@ -11,6 +11,7 @@ import AssessmentFlow from "./pages/AssessmentFlow";
 import AssessmentResults from "./pages/AssessmentResults";
 import PatientIntake from "./pages/PatientIntake";
 import AIReport from "./pages/AIReport";
+import MilestoneTracker from "./pages/MilestoneTracker";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
