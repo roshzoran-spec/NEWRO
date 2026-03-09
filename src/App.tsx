@@ -12,6 +12,8 @@ import AssessmentResults from "./pages/AssessmentResults";
 import PatientIntake from "./pages/PatientIntake";
 import AIReport from "./pages/AIReport";
 import MilestoneTracker from "./pages/MilestoneTracker";
+import BehavioralObservation from "./pages/BehavioralObservation";
+import OroMotorExam from "./pages/OroMotorExam";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,8 @@ const App = () => (
           <Route path="/intake" element={<PatientIntake />} />
           <Route path="/assessment/:id/ai-report" element={<AIReport />} />
           <Route path="/milestones" element={<MilestoneTracker />} />
+          <Route path="/exam/behavioral" element={<BehavioralObservation />} />
+          <Route path="/exam/oro-motor" element={<OroMotorExam />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
