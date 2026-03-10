@@ -17,6 +17,7 @@ import AIReport from "./pages/AIReport";
 import MilestoneTracker from "./pages/MilestoneTracker";
 import BehavioralObservation from "./pages/BehavioralObservation";
 import OroMotorExam from "./pages/OroMotorExam";
+import AIChatbot from "./pages/AIChatbot";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
