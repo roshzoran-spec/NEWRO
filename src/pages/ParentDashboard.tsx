@@ -454,6 +454,12 @@ const ParentDashboard = () => {
                           <ChevronRight className="w-4 h-4 ml-2" />
                         </Button>
                       </Link>
+                      <Link to="/chat">
+                        <Button variant="outline" className="mt-2">
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          Ask Newro AI
+                        </Button>
+                      </Link>
                     </CardContent>
                   </Card>
                 </TabsContent>
