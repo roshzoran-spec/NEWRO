@@ -17,6 +17,7 @@ import AIReport from "./pages/AIReport";
 import MilestoneTracker from "./pages/MilestoneTracker";
 import BehavioralObservation from "./pages/BehavioralObservation";
 import OroMotorExam from "./pages/OroMotorExam";
+import AIChatbot from "./pages/AIChatbot";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/milestones" element={<ProtectedRoute><MilestoneTracker /></ProtectedRoute>} />
             <Route path="/exam/behavioral" element={<BehavioralObservation />} />
             <Route path="/exam/oro-motor" element={<OroMotorExam />} />
+            <Route path="/chat" element={<ProtectedRoute><AIChatbot /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

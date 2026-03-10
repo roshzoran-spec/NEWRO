@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import {
   Brain, Baby, Plus, Bell, Calendar, ClipboardList, TrendingUp,
-  Trash2, Edit, ChevronRight, User, LogOut, Loader2, CheckCircle2, AlertCircle
+  Trash2, Edit, ChevronRight, User, LogOut, Loader2, CheckCircle2, AlertCircle, MessageCircle
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -452,6 +452,12 @@ const ParentDashboard = () => {
                         <Button className="shadow-glow">
                           Open Milestone Tracker
                           <ChevronRight className="w-4 h-4 ml-2" />
+                        </Button>
+                      </Link>
+                      <Link to="/chat">
+                        <Button variant="outline" className="mt-2">
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          Ask Newro AI
                         </Button>
                       </Link>
                     </CardContent>
