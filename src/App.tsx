@@ -44,6 +44,7 @@ const App = () => (
             <Route path="/exam/behavioral" element={<BehavioralObservation />} />
             <Route path="/exam/oro-motor" element={<OroMotorExam />} />
             <Route path="/chat" element={<ProtectedRoute><AIChatbot /></ProtectedRoute>} />
+            <Route path="/video-screening" element={<ProtectedRoute><VideoScreening /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
