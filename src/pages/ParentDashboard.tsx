@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import {
   Brain, Baby, Plus, Bell, Calendar, ClipboardList, TrendingUp,
-  Trash2, Edit, ChevronRight, User, LogOut, Loader2, CheckCircle2, AlertCircle, MessageCircle
+  Trash2, Edit, ChevronRight, User, LogOut, Loader2, CheckCircle2, AlertCircle, MessageCircle, Video
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
