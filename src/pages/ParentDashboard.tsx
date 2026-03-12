@@ -460,6 +460,12 @@ const ParentDashboard = () => {
                           Ask Newro AI
                         </Button>
                       </Link>
+                      <Link to="/video-screening">
+                        <Button variant="outline" className="mt-2">
+                          <Video className="w-4 h-4 mr-2" />
+                          Video Screening
+                        </Button>
+                      </Link>
                     </CardContent>
                   </Card>
                 </TabsContent>
