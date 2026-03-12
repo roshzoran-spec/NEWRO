@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import {
   Brain, Baby, Plus, Bell, Calendar, ClipboardList, TrendingUp,
-  Trash2, Edit, ChevronRight, User, LogOut, Loader2, CheckCircle2, AlertCircle, MessageCircle
+  Trash2, Edit, ChevronRight, User, LogOut, Loader2, CheckCircle2, AlertCircle, MessageCircle, Video
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -458,6 +458,12 @@ const ParentDashboard = () => {
                         <Button variant="outline" className="mt-2">
                           <MessageCircle className="w-4 h-4 mr-2" />
                           Ask Newro AI
+                        </Button>
+                      </Link>
+                      <Link to="/video-screening">
+                        <Button variant="outline" className="mt-2">
+                          <Video className="w-4 h-4 mr-2" />
+                          Video Screening
                         </Button>
                       </Link>
                     </CardContent>

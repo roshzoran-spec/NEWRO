@@ -199,6 +199,53 @@ export type Database = {
         }
         Relationships: []
       }
+      screening_videos: {
+        Row: {
+          child_id: string
+          created_at: string
+          duration_seconds: number | null
+          file_path: string
+          file_size: number | null
+          id: string
+          notes: string | null
+          status: string
+          task_type: string
+          user_id: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          duration_seconds?: number | null
+          file_path: string
+          file_size?: number | null
+          id?: string
+          notes?: string | null
+          status?: string
+          task_type: string
+          user_id: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          duration_seconds?: number | null
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          notes?: string | null
+          status?: string
+          task_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "screening_videos_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       therapy_reminders: {
         Row: {
           child_id: string
