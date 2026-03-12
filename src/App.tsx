@@ -18,6 +18,7 @@ import MilestoneTracker from "./pages/MilestoneTracker";
 import BehavioralObservation from "./pages/BehavioralObservation";
 import OroMotorExam from "./pages/OroMotorExam";
 import AIChatbot from "./pages/AIChatbot";
+import VideoScreening from "./pages/VideoScreening";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
