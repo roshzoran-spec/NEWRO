@@ -1,0 +1,125 @@
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { ArrowLeft, Clock, FileQuestion, ChevronRight, UserPlus, Eye, Stethoscope } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { assessmentTypes } from "@/data/assessments";
+
+const Assessments = () => {
+  return (
+    <div className="min-h-screen bg-gradient-hero">
+      {/* Header */}
+      <header className="border-b border-border bg-background/80 backdrop-blur-lg">
+        <div className="container mx-auto flex items-center h-16 px-4 gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link to="/"><ArrowLeft className="w-5 h-5" /></Link>
+          </Button>
+          <h1 className="font-display font-bold text-lg text-foreground">Developmental Assessments</h1>
+          <div className="ml-auto">
+            <Button size="sm" asChild>
+              <Link to="/intake"><UserPlus className="w-4 h-4 mr-1" /> New Patient</Link>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <h2 className="font-display text-3xl sm:text-4xl font-bold mb-4">
+            Choose an <span className="text-gradient-primary">Assessment</span>
+          </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Select a standardized screening tool to evaluate your child's development. Each assessment is based on internationally recognized clinical frameworks.
+          </p>
+        </motion.div>
+
+        <div className="grid sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {assessmentTypes.map((a, i) => (
+            <motion.div
+              key={a.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+            >
+              <Link
+                to={`/assessment/${a.id}`}
+                className={`block rounded-2xl bg-card border-2 ${a.color} p-6 transition-all duration-300 hover:shadow-lg group`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`w-14 h-14 rounded-xl ${a.iconBg} flex items-center justify-center text-2xl shrink-0`}>
+                    {a.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-display font-bold text-lg text-card-foreground mb-1">{a.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">{a.description}</p>
+                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" /> {a.duration}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <FileQuestion className="w-3.5 h-3.5" /> {a.questionCount} questions
+                      </span>
+                      <span className="text-primary font-medium">{a.ageRange}</span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" />
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Clinical Examinations */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-14 max-w-4xl mx-auto"
+        >
+          <h3 className="font-display text-xl font-bold text-center mb-6">
+            Clinical <span className="text-gradient-primary">Examination Modules</span>
+          </h3>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Link
+              to="/exam/behavioral"
+              className="flex items-center gap-4 rounded-2xl bg-card border-2 border-primary/20 hover:border-primary/50 p-5 transition-all hover:shadow-lg group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+                <Eye className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-display font-bold text-card-foreground">Behavioral Observation</h4>
+                <p className="text-xs text-muted-foreground">Eye contact, joint attention, play, sensory behaviors — 20 parameters</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+            </Link>
+            <Link
+              to="/exam/oro-motor"
+              className="flex items-center gap-4 rounded-2xl bg-card border-2 border-accent/20 hover:border-accent/50 p-5 transition-all hover:shadow-lg group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-coral-light flex items-center justify-center shrink-0">
+                <Stethoscope className="w-6 h-6 text-coral" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-display font-bold text-card-foreground">Oro-Motor & Cranial Nerve</h4>
+                <p className="text-xs text-muted-foreground">Lip, tongue, jaw, palatal function + CN V, VII, IX, X, XII — 36 parameters</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-accent transition-colors shrink-0" />
+            </Link>
+          </div>
+        </motion.div>
+
+        <div className="text-center mt-10">
+          <p className="text-xs text-muted-foreground max-w-md mx-auto">
+            These screenings are for informational purposes and do not replace professional clinical evaluation. Consult a specialist for diagnosis.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Assessments;
