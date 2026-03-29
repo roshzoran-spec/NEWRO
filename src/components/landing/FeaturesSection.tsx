@@ -48,8 +48,8 @@ const FeaturesSection = () => {
   return (
     <section id="features" className="py-32 relative overflow-hidden bg-background">
       {/* Decorative Background Elements */}
-      <div className="absolute top-1/2 left-0 w-[500px] h-[500px] bg-ai-purple/5 rounded-full blur-[100px] -translate-y-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/2 left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-accent/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="container mx-auto px-6 relative z-10">
         <motion.div
@@ -58,15 +58,15 @@ const FeaturesSection = () => {
           viewport={{ once: true }}
           className="text-center mb-20"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-sm font-medium mb-6 text-primary border border-primary/20">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-sm font-bold mb-6 text-primary border border-primary/20 uppercase tracking-widest">
              Next-Generation Ecosystem
           </div>
-          <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 tracking-tight text-foreground leading-tight">
+          <h2 className="font-display text-4xl sm:text-5xl lg:text-7xl font-black mb-6 tracking-tight text-foreground leading-tight">
             Complete Pediatric <br className="hidden sm:block" />
-            <span className="text-gradient-primary">Intelligence Platform</span>
+            <span className="text-gradient-newro italic">Intelligence Platform</span>
           </h2>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-light leading-relaxed">
-            Everything your child needs, from the first screening to comprehensive therapy sessions—powered by the most sophisticated AI ever built for pediatric care.
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-bold leading-relaxed">
+            Everything your child needs, from the first screening to comprehensive therapy sessions—powered by AI built for pediatric care.
           </p>
         </motion.div>
 
@@ -78,19 +78,14 @@ const FeaturesSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1, duration: 0.6, ease: "easeOut" }}
-              className={`group relative p-8 md:p-10 rounded-[2rem] glass-panel border border-white/60 hover:border-primary/40 hover:bg-white/80 transition-all duration-500 hover:-translate-y-2 ${f.span}`}
+              className={`group relative p-8 md:p-10 rounded-[3rem] glass-card border-none hover:bg-white/60 transition-all duration-500 hover:-translate-y-2 ${f.span}`}
             >
-              <div className="absolute inset-0 rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/60 to-white/0 pointer-events-none" />
-              
-              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-8 text-white ${f.shadow} group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500`}>
+              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-8 text-white shadow-glow-soft group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500`}>
                 <f.icon className="w-7 h-7" />
               </div>
               
-              <h3 className="font-display font-bold text-2xl md:text-3xl mb-4 text-foreground tracking-tight">{f.title}</h3>
-              <p className="text-muted-foreground leading-relaxed font-light text-lg">{f.desc}</p>
-              
-              {/* Subtle hover glow at bottom of card */}
-              <div className="absolute -bottom-2 inset-x-10 h-10 bg-gradient-to-r from-primary/0 via-primary/20 to-primary/0 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+              <h3 className="font-display font-black text-2xl md:text-3xl mb-4 text-foreground tracking-tight">{f.title}</h3>
+              <p className="text-muted-foreground leading-relaxed font-bold text-lg">{f.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -98,5 +93,6 @@ const FeaturesSection = () => {
     </section>
   );
 };
+
 
 export default FeaturesSection;
