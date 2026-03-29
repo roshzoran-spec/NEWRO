@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Brain, ChevronRight, Activity, MessageCircle, Users, Plus } from "lucide-react";
+import { Brain, ChevronRight, Activity, MessageCircle, Users, Plus, Sparkles as SparklesIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
+import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, ReferenceLine } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -25,90 +25,113 @@ const generateMockData = (baseSeed: number) => {
   ];
 };
 
-const ChildCard = ({ name, age, data, delay = 0 }: { name: string; age: string; data: any[]; delay?: number }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 40, scale: 0.95 }}
-    animate={{ opacity: 1, y: 0, scale: 1 }}
-    transition={{ duration: 1, delay, ease: "easeOut" }}
-    className="relative w-full max-w-xl group"
-  >
-    <div className="absolute inset-0 bg-primary/5 blur-[60px] rounded-full scale-75 group-hover:scale-90 transition-transform duration-1000" />
-    
-    <div className="glass-card rounded-[2.5rem] p-8 md:p-10 border-white/60 shadow-2xl animate-float relative z-10">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary font-bold text-lg">
-            👶
+const ChildCard = ({ name, age, data, delay = 0 }: { name: string; age: string; data: any[]; delay?: number }) => {
+  const currentAgeNum = parseFloat(age.split(' ')[0]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 40, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 1, delay, ease: "easeOut" }}
+      className="relative w-full max-w-xl group mx-auto"
+    >
+      <div className="absolute inset-0 bg-primary/5 blur-[60px] rounded-full scale-75 group-hover:scale-90 transition-transform duration-1000" />
+      
+      <div className="glass-card rounded-[2.5rem] p-8 md:p-10 border-white/60 shadow-2xl animate-float relative z-10">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary font-bold text-lg">
+              👶
+            </div>
+            <div className="text-left">
+              <h3 className="text-xl font-black text-foreground">{name}</h3>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{age}</p>
+            </div>
           </div>
-          <div className="text-left">
-            <h3 className="text-xl font-black text-foreground">{name}</h3>
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{age} years</p>
+          <div className="flex flex-col items-end">
+            <div className="px-3 py-1 rounded-full bg-primary/10 text-[9px] font-black tracking-widest text-primary uppercase border border-primary/20">
+              Real-time Status
+            </div>
           </div>
         </div>
-        <div className="flex flex-col items-end">
-          <div className="px-3 py-1 rounded-full bg-primary/10 text-[9px] font-black tracking-widest text-primary uppercase border border-primary/20">
-            Real-time Status
-          </div>
+
+        <div className="h-[200px] w-full mb-8 relative">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+              <defs>
+                <linearGradient id={`colorMotor-${name}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10B981" stopOpacity={0.2}/>
+                  <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id={`colorLang-${name}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.2}/>
+                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id={`colorSocial-${name}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.2}/>
+                  <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <XAxis 
+                dataKey="age" 
+                type="number" 
+                domain={[1, 3]} 
+                ticks={[1, 1.5, 2, 2.5, 3]} 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 9, fontWeight: 800, fill: '#64748B' }}
+                label={{ value: 'Age (Years)', position: 'insideBottom', offset: -10, fontSize: 9, fontWeight: 900, fill: '#64748B' }}
+              />
+              <Tooltip 
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="glass-card p-3 rounded-xl border-none shadow-2xl backdrop-blur-2xl">
+                        <p className="text-[9px] font-black text-muted-foreground uppercase mb-1">Age {payload[0].payload.age}</p>
+                        {payload.map((entry) => (
+                          <div key={entry.name} className="flex items-center justify-between gap-3 mb-0.5">
+                            <span className="text-[8px] font-bold text-muted-foreground uppercase">{entry.name}</span>
+                            <span className="text-[10px] font-black" style={{ color: entry.color }}>{entry.value}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Area animationDuration={2000} type="monotone" dataKey="motor" stroke="#10B981" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorMotor-${name})`} name="Motor" />
+              <Area animationDuration={2500} type="monotone" dataKey="language" stroke="#3B82F6" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorLang-${name})`} name="Language" />
+              <Area animationDuration={3000} type="monotone" dataKey="social" stroke="#8B5CF6" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorSocial-${name})`} name="Social" />
+              
+              {/* Reference line for child's current age */}
+              <ReferenceLine 
+                x={currentAgeNum} 
+                stroke="#3B82F6" 
+                strokeWidth={2} 
+                strokeDasharray="3 3" 
+                label={{ value: 'Today', position: 'top', fontSize: 10, fontWeight: 900, fill: '#3B82F6' }} 
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 mb-8">
+          <StatusItem icon={<Activity size={16} />} label="Motor" status="On Track" color="emerald" />
+          <StatusItem icon={<MessageCircle size={16} />} label="Language" status="Monitor" color="amber" />
+          <StatusItem icon={<Users size={16} />} label="Social" status="On Track" color="purple" />
+        </div>
+
+        <div className="p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-2xl border border-white/40 flex items-center gap-3">
+          <SparklesIcon className="w-4 h-4 text-primary" />
+          <p className="text-xs font-bold text-foreground/80 text-left leading-tight">
+            "{name} shows consistent progress in motor skills. Early language stimulation suggested."
+          </p>
         </div>
       </div>
-
-      <div className="h-[200px] w-full mb-8 relative">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data}>
-            <defs>
-              <linearGradient id={`colorMotor-${name}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10B981" stopOpacity={0.2}/>
-                <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-              </linearGradient>
-              <linearGradient id={`colorLang-${name}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.2}/>
-                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-              </linearGradient>
-              <linearGradient id={`colorSocial-${name}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.2}/>
-                <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <Tooltip 
-              content={({ active, payload }) => {
-                if (active && payload && payload.length) {
-                  return (
-                    <div className="glass-card p-3 rounded-xl border-none shadow-2xl backdrop-blur-2xl">
-                      <p className="text-[9px] font-black text-muted-foreground uppercase mb-1">Age {payload[0].payload.age}</p>
-                      {payload.map((entry) => (
-                        <div key={entry.name} className="flex items-center justify-between gap-3 mb-0.5">
-                          <span className="text-[8px] font-bold text-muted-foreground uppercase">{entry.name}</span>
-                          <span className="text-[10px] font-black" style={{ color: entry.color }}>{entry.value}%</span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
-            <Area animationDuration={2000} type="monotone" dataKey="motor" stroke="#10B981" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorMotor-${name})`} name="Motor" />
-            <Area animationDuration={2500} type="monotone" dataKey="language" stroke="#3B82F6" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorLang-${name})`} name="Language" />
-            <Area animationDuration={3000} type="monotone" dataKey="social" stroke="#8B5CF6" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorSocial-${name})`} name="Social" />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3 mb-8">
-        <StatusItem icon={<Activity size={16} />} label="Motor" status="On Track" color="emerald" />
-        <StatusItem icon={<MessageCircle size={16} />} label="Language" status="Monitor" color="amber" />
-        <StatusItem icon={<Users size={16} />} label="Social" status="On Track" color="purple" />
-      </div>
-
-      <div className="p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-2xl border border-white/40 flex items-center gap-3">
-        <Sparkles className="w-4 h-4 text-primary" />
-        <p className="text-xs font-bold text-foreground/80 text-left leading-tight">
-          "{name} shows consistent progress in motor skills. Early language stimulation suggested."
-        </p>
-      </div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 const StatusItem = ({ icon, label, status, color }: { icon: any; label: string; status: string; color: string }) => {
   const colorMap: any = {
@@ -157,12 +180,18 @@ const HeroSection = () => {
   const calculateAge = (dob: string) => {
     const birthday = new Date(dob);
     const today = new Date();
-    let age = today.getFullYear() - birthday.getFullYear();
-    const m = today.getMonth() - birthday.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthday.getDate())) {
-      age--;
+    
+    const diffTime = Math.abs(today.getTime() - birthday.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30.43);
+      return months === 0 ? "Newborn" : `${months} MONTHS`;
     }
-    return age.toFixed(1);
+    
+    // Years with one decimal
+    const years = diffDays / 365.25;
+    return `${years.toFixed(1)} YEARS`;
   };
 
   return (
@@ -224,12 +253,12 @@ const HeroSection = () => {
           Combine intelligent milestone tracking, clinical insights, and personalized therapy guidance into the world’s most advanced platform.
         </motion.p>
 
-        <div className="w-full flex flex-col items-center">
+        <div className="w-full flex justify-center items-center">
           <AnimatePresence mode="wait">
             {user && children.length > 0 ? (
               <motion.div 
                 key="children-grid"
-                className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl"
+                className={`flex flex-wrap justify-center gap-8 w-full ${children.length === 1 ? 'max-w-2xl' : 'max-w-6xl'}`}
               >
                 {children.map((child, idx) => (
                   <ChildCard 
@@ -245,7 +274,7 @@ const HeroSection = () => {
               <motion.div key="demo-card" className="w-full flex justify-center">
                 <ChildCard 
                   name="Aarav" 
-                  age="2.4" 
+                  age="2.4 YEARS" 
                   data={aaravData} 
                   delay={0.6}
                 />
@@ -271,7 +300,6 @@ const HeroSection = () => {
           </Button>
         </motion.div>
         
-        {/* Persistent Login/Signup accessibility hint */}
         {!user && (
           <motion.div 
             initial={{ opacity: 0 }}
@@ -286,12 +314,6 @@ const HeroSection = () => {
   );
 };
 
-const Sparkles = ({ className }: { className?: string }) => (
-  <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
-    <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
-  </svg>
-);
-
 export default HeroSection;
+
 
