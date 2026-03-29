@@ -16,10 +16,22 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, fullName: string, role: string) => Promise<{ data: { user: User | null; session: Session | null }; error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  updatePassword: (password: string) => Promise<{ error: Error | null }>;
+  signOut: () => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const clearSupabaseSessionCache = () => {
+  Object.keys(localStorage)
+    .filter((key) => key.startsWith("sb-") && key.includes("-auth-token"))
+    .forEach((key) => localStorage.removeItem(key));
+};
+
+const isRecoverableSignOutLockError = (error: unknown) => {
+  return error instanceof Error && error.message.includes('Lock "lock:sb-') && error.message.includes("was released because another request stole it");
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -130,12 +142,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    const redirectTo = `${window.location.origin}/reset-password`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    return { error };
+  };
+
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    return { error };
+  };
+
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      const { error } = await supabase.auth.signOut({ scope: "local" });
+
+      if (error && !isRecoverableSignOutLockError(error)) {
+        return { error };
+      }
+
+      clearSupabaseSessionCache();
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      setLoading(false);
+
+      return { error: null };
+    } catch (error) {
+      if (isRecoverableSignOutLockError(error)) {
+        clearSupabaseSessionCache();
+        setUser(null);
+        setSession(null);
+        setProfile(null);
+        setLoading(false);
+
+        return { error: null };
+      }
+
+      return {
+        error: error instanceof Error ? error : new Error("Unable to sign out. Please try again."),
+      };
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signUp, signIn, resetPassword, updatePassword, signOut }}>
       {children}
     </AuthContext.Provider>
   );

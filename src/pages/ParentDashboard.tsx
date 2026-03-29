@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, differenceInMonths, isPast, isToday, addDays } from "date-fns";
 import { calculateAchievement, getMilestonesForAge } from "@/data/milestones";
+import type { Database } from "@/integrations/supabase/types";
 
 interface Child {
   id: string;
@@ -49,13 +50,18 @@ interface Reminder {
   reminder_type: string;
 }
 
+type ChildInsert = Database["public"]["Tables"]["children"]["Insert"];
+
 const ParentDashboard = () => {
   const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
   const [children, setChildren] = useState<Child[]>([]);
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [addingChild, setAddingChild] = useState(false);
   const [showAddChild, setShowAddChild] = useState(false);
   const [showAddReminder, setShowAddReminder] = useState(false);
   const [newChild, setNewChild] = useState({ name: "", dob: "", gender: "unknown", notes: "" });
@@ -78,6 +84,15 @@ const ParentDashboard = () => {
     if (selectedChild) fetchAssessments(selectedChild.id);
   }, [selectedChild]);
 
+  useEffect(() => {
+    if (!addingChild) return;
+    const timer = window.setTimeout(() => {
+      setAddingChild(false);
+      toast.error("Creating profile timed out. Please try again.");
+    }, 12000);
+    return () => window.clearTimeout(timer);
+  }, [addingChild]);
+
   const fetchChildren = async () => {
     if (user?.id === "guest-user-123") {
       setChildren([
@@ -88,12 +103,26 @@ const ParentDashboard = () => {
       setLoading(false);
       return;
     }
-    const { data } = await supabase.from("children").select("*").order("created_at", { ascending: false });
-    if (data) {
-      setChildren(data as Child[]);
-      if (data.length > 0 && !selectedChild) setSelectedChild(data[0] as Child);
+    try {
+      const result = await Promise.race([
+        supabase.from("children").select("*").order("created_at", { ascending: false }),
+        new Promise<{ data: null; error: Error }>((resolve) => {
+          window.setTimeout(() => resolve({ data: null, error: new Error("Fetching profiles timed out.") }), 10000);
+        }),
+      ]);
+
+      if (result.error) {
+        toast.error(result.error.message);
+        return;
+      }
+
+      if (result.data) {
+        setChildren(result.data as Child[]);
+        if (result.data.length > 0 && !selectedChild) setSelectedChild(result.data[0] as Child);
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const fetchAssessments = async (childId: string) => {
@@ -117,8 +146,6 @@ const ParentDashboard = () => {
     if (data) setReminders(data as Reminder[]);
   };
 
-  const dobInputRef = (window as unknown as { __dobInput?: HTMLInputElement }).__dobInput;
-
   const handleAddChild = async () => {
     // Fallback to DOM value in case controlled state didn't update (e.g. browser date picker)
     const dobValue = newChild.dob || (document.querySelector('input[type="date"]') as HTMLInputElement)?.value || "";
@@ -126,21 +153,80 @@ const ParentDashboard = () => {
       toast.error("Please fill in name and date of birth");
       return;
     }
-    const { error, data } = await supabase.from("children").insert({
-      parent_id: user!.id,
-      name: newChild.name,
-      date_of_birth: dobValue,
-      gender: newChild.gender,
-      notes: newChild.notes,
-    }).select().single();
 
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success(`${newChild.name} added!`);
+    setAddingChild(true);
+    try {
+      if (!user) {
+        toast.error("Please sign in again before adding a child profile.");
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      if (user.id === "guest-user-123") {
+        const guestChild: Child = {
+          id: `guest-${Date.now()}`,
+          name: newChild.name.trim(),
+          date_of_birth: dobValue,
+          gender: newChild.gender,
+          notes: newChild.notes,
+        };
+        setChildren((prev) => [guestChild, ...prev]);
+        setSelectedChild(guestChild);
+        setShowAddChild(false);
+        setNewChild({ name: "", dob: "", gender: "unknown", notes: "" });
+        toast.success(`${guestChild.name} added!`);
+        return;
+      }
+
+      const payload: ChildInsert = {
+        parent_id: user.id,
+        name: newChild.name.trim(),
+        date_of_birth: dobValue,
+        gender: newChild.gender || "unknown",
+        notes: newChild.notes.trim(),
+      };
+
+      const insertResult = await Promise.race([
+        supabase.from("children").insert(payload),
+        new Promise<{ data: null; error: Error }>((resolve) => {
+          window.setTimeout(() => {
+            resolve({ data: null, error: new Error("Create profile request timed out. Please retry.") });
+          }, 10000);
+        }),
+      ]);
+
+      if (insertResult.error) {
+        const errorText = [
+          insertResult.error.message,
+          insertResult.error.code ? `(code: ${insertResult.error.code})` : "",
+          insertResult.error.hint ? `Hint: ${insertResult.error.hint}` : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        const normalizedError = insertResult.error.message.toLowerCase();
+
+        if (normalizedError.includes("jwt") || normalizedError.includes("auth") || insertResult.error.code === "PGRST301") {
+          toast.error("Your session has expired. Please sign in again.");
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        if (normalizedError.includes("row-level security")) {
+          toast.error("You don't have permission to create this child profile. Please sign out and sign back in.");
+        } else {
+          toast.error(`Unable to add child profile: ${errorText}`);
+        }
+        return;
+      }
       setShowAddChild(false);
       setNewChild({ name: "", dob: "", gender: "unknown", notes: "" });
-      fetchChildren();
+      toast.success(`${payload.name} added!`);
+      await fetchChildren();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to add child profile.");
+    } finally {
+      setAddingChild(false);
     }
   };
 
@@ -193,6 +279,20 @@ const ParentDashboard = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    setLoggingOut(true);
+    const { error } = await signOut();
+    setLoggingOut(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("Logged out successfully.");
+    navigate("/login", { replace: true });
+  };
+
   // Calculate child age
   const getChildAge = (dob: string) => {
     const months = differenceInMonths(new Date(), new Date(dob));
@@ -234,7 +334,7 @@ const ParentDashboard = () => {
               </div>
               <span className="font-display font-bold text-2xl tracking-tight text-foreground">Newro</span>
             </Link>
-            <Button variant="ghost" size="icon" onClick={signOut} className="rounded-full">
+            <Button variant="ghost" size="icon" onClick={handleSignOut} className="rounded-full" disabled={loggingOut}>
               <LogOut className="w-5 h-5" />
             </Button>
           </div>
@@ -285,7 +385,8 @@ const ParentDashboard = () => {
                         </Select>
                       </div>
                     </div>
-                    <Button onClick={handleAddChild} className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 font-bold mt-4 shadow-glow">
+                    <Button onClick={handleAddChild} className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 font-bold mt-4 shadow-glow" disabled={addingChild}>
+                      {addingChild && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                       Create Profile
                     </Button>
                  </div>
@@ -316,7 +417,7 @@ const ParentDashboard = () => {
               <User className="w-4 h-4 text-primary" />
               <span className="font-medium text-foreground">{profile?.full_name || user?.email}</span>
             </div>
-            <Button variant="ghost" size="icon" onClick={signOut} className="hover:bg-rose-500/10 hover:text-rose-500 rounded-full transition-colors">
+            <Button variant="ghost" size="icon" onClick={handleSignOut} className="hover:bg-rose-500/10 hover:text-rose-500 rounded-full transition-colors" disabled={loggingOut}>
               <LogOut className="w-5 h-5" />
             </Button>
           </div>
@@ -375,7 +476,10 @@ const ParentDashboard = () => {
                         onChange={e => setNewChild({ ...newChild, notes: e.target.value })}
                       />
                     </div>
-                    <Button className="w-full" onClick={handleAddChild}>Add Child</Button>
+                    <Button className="w-full" onClick={handleAddChild} disabled={addingChild}>
+                      {addingChild && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      Add Child
+                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>

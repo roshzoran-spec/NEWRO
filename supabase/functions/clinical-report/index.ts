@@ -12,8 +12,10 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const AI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("AI_API_KEY");
+    const AI_MODEL = Deno.env.get("AI_MODEL") ?? "gpt-4o-mini";
+    const AI_BASE_URL = (Deno.env.get("AI_BASE_URL") ?? "https://api.openai.com/v1").replace(/\/$/, "");
+    if (!AI_API_KEY) throw new Error("OPENAI_API_KEY (or AI_API_KEY) is not configured");
 
     const { assessmentData } = await req.json();
 
@@ -76,15 +78,15 @@ ${JSON.stringify(assessmentData, null, 2)}
 Please generate a comprehensive clinical report following the exact section structure specified.`;
 
     const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
+      `${AI_BASE_URL}/chat/completions`,
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          Authorization: `Bearer ${AI_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: AI_MODEL,
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userMessage },
@@ -103,7 +105,7 @@ Please generate a comprehensive clinical report following the exact section stru
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add credits in Settings → Workspace → Usage." }),
+          JSON.stringify({ error: "AI credits exhausted. Please check your provider billing/credits." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
