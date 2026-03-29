@@ -227,16 +227,58 @@ const AIReport = () => {
             ref={reportRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="rounded-2xl bg-card border border-border p-6 sm:p-10 mb-8"
+            className="mb-8 relative"
           >
-            {isStreaming && (
-              <div className="flex items-center gap-2 mb-6 text-primary text-sm font-medium">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Generating report...
+            {/* Clinical Document Container */}
+            <div className="bg-white text-slate-900 shadow-2xl rounded-sm border border-slate-200 min-h-[11in] px-12 py-16 mx-auto print:shadow-none print:border-none print:p-0 print:m-0" style={{ width: "100%", maxWidth: "8.5in" }}>
+              
+              {/* Report Header (Letterhead style) */}
+              <div className="border-b-2 border-primary/20 pb-8 mb-10 flex justify-between items-start">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Brain className="w-8 h-8 text-primary" />
+                    <span className="font-display font-bold text-2xl tracking-tight">NEWRO <span className="text-sm font-normal text-slate-500 font-sans tracking-normal ml-1">Neurodevelopmental AI</span></span>
+                  </div>
+                  <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold">Diagnostic Support Systems • v2.4.0</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-bold text-slate-800 uppercase">Assessment Reference</p>
+                  <p className="text-lg font-mono text-primary font-bold">#{id?.slice(0, 8).toUpperCase()}</p>
+                </div>
               </div>
-            )}
-            <div className="prose prose-sm sm:prose max-w-none prose-headings:font-display prose-headings:text-foreground prose-p:text-foreground/85 prose-li:text-foreground/85 prose-strong:text-foreground prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-border">
-              <ReactMarkdown>{report}</ReactMarkdown>
+
+              {isStreaming && (
+                <div className="flex items-center gap-2 mb-6 text-primary text-sm font-medium animate-pulse">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  AI Clinical Specialist is compiling findings...
+                </div>
+              )}
+
+              <div className="prose prose-slate max-w-none 
+                prose-headings:font-display prose-headings:text-slate-900 
+                prose-p:text-slate-700 prose-p:leading-relaxed
+                prose-strong:text-slate-900 prose-strong:font-bold
+                prose-h1:text-3xl prose-h1:border-b prose-h1:border-slate-100 prose-h1:pb-4 prose-h1:mb-8
+                prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:uppercase prose-h2:tracking-wider prose-h2:text-primary
+                prose-table:border prose-table:border-slate-200 prose-th:bg-slate-50 prose-th:px-4 prose-th:py-2 prose-td:px-4 prose-td:py-2
+                prose-li:text-slate-700
+              ">
+                <ReactMarkdown>{report}</ReactMarkdown>
+              </div>
+
+              {/* Signature Section */}
+              <div className="mt-20 pt-8 border-t border-slate-100 flex justify-between items-end opacity-60">
+                <div>
+                  <div className="w-40 h-px bg-slate-400 mb-2" />
+                  <p className="text-xs font-bold uppercase">Digital Verification Path</p>
+                  <p className="text-[10px] font-mono">HASH: {id}</p>
+                </div>
+                <div className="text-right">
+                  <div className="w-40 h-px bg-slate-400 mb-2 ml-auto" />
+                  <p className="text-xs font-bold uppercase">Clinical AI Specialist</p>
+                  <p className="text-xs">Certified Newro Intelligence Model</p>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}

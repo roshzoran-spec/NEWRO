@@ -1,0 +1,40 @@
+import Navbar from "@/components/landing/Navbar";
+import Footer from "@/components/landing/Footer";
+import { PageTransition } from "@/components/PageTransition";
+import { motion } from "framer-motion";
+import { Activity } from "lucide-react";
+
+const Therapy = () => {
+  return (
+    <PageTransition>
+      <div className="min-h-screen bg-background flex flex-col font-sans">
+        <Navbar />
+        <main className="flex-1 flex flex-col items-center justify-center pt-32 pb-20 px-4 bg-gradient-newro relative overflow-hidden">
+          <div className="absolute top-40 left-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+          
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-panel border-white/40 p-12 rounded-[3rem] text-center max-w-2xl relative z-10 shadow-glow-ai"
+          >
+            <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-ai-purple to-primary flex items-center justify-center mb-8 mx-auto shadow-glow text-white animate-pulse">
+              <Activity className="w-10 h-10" />
+            </div>
+            <h1 className="font-display text-4xl font-black mb-6 text-foreground tracking-tight">
+              Smart <span className="text-gradient-primary">Therapy Plans</span>
+            </h1>
+            <p className="text-lg text-muted-foreground font-medium leading-relaxed mb-8">
+              Our AI is currently training on thousands of pediatric clinical cases to provide 100% personalized therapy activities for your child.
+            </p>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest border border-primary/20">
+              Coming Soon in Q2 2026
+            </div>
+          </motion.div>
+        </main>
+        <Footer />
+      </div>
+    </PageTransition>
+  );
+};
+
+export default Therapy;

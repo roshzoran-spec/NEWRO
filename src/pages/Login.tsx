@@ -21,7 +21,13 @@ const Login = () => {
     const { error } = await signIn(email, password);
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      if (error.message.toLowerCase().includes("email not confirmed")) {
+        toast.error("Please confirm your email address before signing in. Check your inbox for the confirmation link.");
+      } else if (error.message.toLowerCase().includes("invalid login credentials")) {
+        toast.error("Invalid email or password. Please try again.");
+      } else {
+        toast.error(error.message);
+      }
     } else {
       toast.success("Welcome back!");
       navigate("/dashboard");
@@ -70,7 +76,7 @@ const Login = () => {
                 required
               />
             </div>
-            <Button className="w-full shadow-glow" size="lg" disabled={loading}>
+            <Button className="w-full shadow-glow h-12 rounded-xl bg-gradient-cta" size="lg" disabled={loading} type="submit">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>

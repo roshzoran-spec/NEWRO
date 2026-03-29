@@ -14,7 +14,7 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string, role: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, role: string) => Promise<{ data: { user: User | null; session: Session | null }; error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
@@ -28,12 +28,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-    if (data) setProfile(data as Profile);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      
+      if (error) throw error;
+      if (data) setProfile(data as Profile);
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+    }
   };
 
   useEffect(() => {
@@ -55,18 +61,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       if (session?.user) fetchProfile(session.user.id);
       else setLoading(false);
-    });
+    }).catch(() => setLoading(false));
 
-    return () => subscription.unsubscribe();
+    // Safety timeout to prevent infinite buffering if Supabase hangs
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2500);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string, role: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName, role } },
     });
-    return { error };
+    return { data, error };
   };
 
   const signIn = async (email: string, password: string) => {

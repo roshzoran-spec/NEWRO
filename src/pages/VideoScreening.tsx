@@ -178,7 +178,7 @@ const VideoScreening = () => {
 
       // Auto-advance to next incomplete task
       if (currentTaskIndex < SCREENING_TASKS.length - 1) {
-        setTimeout(() => setCurrentTaskIndex(i => i + 1), 800);
+        setTimeout(() => setCurrentTaskIndex(i => i + 1), 400);
       }
     } catch (err: any) {
       toast.error(err.message || "Upload failed");

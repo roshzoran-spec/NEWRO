@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Brain, Menu, X, LayoutDashboard } from "lucide-react";
+import { Brain, Menu, X, LayoutDashboard, ArrowRight, Activity, Shield, Clock, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -10,10 +10,10 @@ const Navbar = () => {
   const { user } = useAuth();
 
   const links = [
-    { label: "Screening", href: "#screening" },
-    { label: "Therapy", href: "#therapy" },
-    { label: "Milestones", href: "#milestones" },
-    { label: "Consultation", href: "#consultation" },
+    { label: "Screening", to: "/screening" },
+    { label: "Therapy", to: "/therapy" },
+    { label: "Milestones", to: "/milestones" },
+    { label: "Consultation", to: "/consultation" },
   ];
 
   return (
@@ -28,13 +28,13 @@ const Navbar = () => {
 
         <div className="hidden md:flex items-center gap-8">
           {links.map((l) => (
-            <a
+            <Link
               key={l.label}
-              href={l.href}
+              to={l.to}
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
             >
               {l.label}
-            </a>
+            </Link>
           ))}
         </div>
 
@@ -73,14 +73,14 @@ const Navbar = () => {
           >
             <div className="px-6 py-6 flex flex-col gap-4">
               {links.map((l) => (
-                <a
+                <Link
                   key={l.label}
-                  href={l.href}
+                  to={l.to}
                   className="text-lg font-medium text-muted-foreground hover:text-primary transition-colors py-2"
                   onClick={() => setMobileOpen(false)}
                 >
                   {l.label}
-                </a>
+                </Link>
               ))}
               <div className="flex flex-col gap-3 pt-4 border-t border-black/5">
                 {user ? (

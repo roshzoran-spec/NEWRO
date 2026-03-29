@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import {
   Brain, Baby, Plus, Bell, Calendar, ClipboardList, TrendingUp,
-  Trash2, Edit, ChevronRight, User, LogOut, Loader2, CheckCircle2, AlertCircle, MessageCircle, Video
+  Trash2, Edit, ChevronRight, User, LogOut, Loader2, CheckCircle2, AlertCircle, MessageCircle, Video, Activity, ArrowUpRight
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,6 +67,11 @@ const ParentDashboard = () => {
       fetchChildren();
       fetchReminders();
     }
+    // Safety exit for buffering
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
   }, [user]);
 
   useEffect(() => {
@@ -74,6 +79,15 @@ const ParentDashboard = () => {
   }, [selectedChild]);
 
   const fetchChildren = async () => {
+    if (user?.id === "guest-user-123") {
+      setChildren([
+        { id: "c1", name: "Leo", date_of_birth: addDays(new Date(), -1250).toISOString(), gender: "male", notes: "Bright and active" },
+        { id: "c2", name: "Mia", date_of_birth: addDays(new Date(), -700).toISOString(), gender: "female", notes: "Loves music" }
+      ]);
+      setSelectedChild({ id: "c1", name: "Leo", date_of_birth: addDays(new Date(), -1250).toISOString(), gender: "male", notes: "Bright and active" });
+      setLoading(false);
+      return;
+    }
     const { data } = await supabase.from("children").select("*").order("created_at", { ascending: false });
     if (data) {
       setChildren(data as Child[]);
@@ -92,6 +106,13 @@ const ParentDashboard = () => {
   };
 
   const fetchReminders = async () => {
+    if (user?.id === "guest-user-123") {
+      setReminders([
+        { id: "r1", child_id: "c1", title: "Speech Therapy", description: "Practice 's' sounds", reminder_date: addDays(new Date(), 1).toISOString(), is_completed: false, reminder_type: "therapy" },
+        { id: "r2", child_id: "c1", title: "Milestone Check", description: "18-month checkup", reminder_date: addDays(new Date(), 5).toISOString(), is_completed: false, reminder_type: "milestone" }
+      ]);
+      return;
+    }
     const { data } = await supabase.from("therapy_reminders").select("*").order("reminder_date");
     if (data) setReminders(data as Reminder[]);
   };
@@ -197,29 +218,106 @@ const ParentDashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" strokeWidth={3} />
+      </div>
+    );
+  }
+
+  if (children.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-newro flex flex-col items-center justify-center p-4">
+        <header className="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-md border-b border-white/40">
+           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-xl bg-gradient-cta flex items-center justify-center shadow-glow">
+                <Brain className="w-5 h-5 text-white" />
+              </div>
+              <span className="font-display font-bold text-2xl tracking-tight text-foreground">Newro</span>
+            </Link>
+            <Button variant="ghost" size="icon" onClick={signOut} className="rounded-full">
+              <LogOut className="w-5 h-5" />
+            </Button>
+          </div>
+        </header>
+        
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full glass-panel p-10 rounded-[3rem] text-center shadow-xl border-white/40"
+        >
+          <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center text-primary mx-auto mb-6">
+            <Baby className="w-10 h-10" />
+          </div>
+          <h2 className="font-display text-3xl font-bold text-foreground mb-4">Welcome to Newro</h2>
+          <p className="text-muted-foreground mb-8">Start by adding your child's profile to track their development with AI.</p>
+          <Dialog open={showAddChild} onOpenChange={setShowAddChild}>
+            <DialogTrigger asChild>
+              <Button size="lg" className="rounded-full px-10 h-14 font-bold shadow-glow text-lg">
+                <Plus className="w-5 h-5 mr-2" /> Add Child Profile
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px] glass-panel-dark border-white/20 text-white rounded-[2rem] p-0 overflow-hidden">
+               <div className="p-8">
+                 <DialogHeader className="mb-6">
+                    <DialogTitle className="text-2xl font-bold">Add Child Profile</DialogTitle>
+                 </DialogHeader>
+                 <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="text-white/60">Child's Name</Label>
+                      <Input id="name" placeholder="Enter name" className="bg-white/10 border-white/10 text-white h-12 rounded-xl" value={newChild.name} onChange={(e) => setNewChild({...newChild, name: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dob" className="text-white/60">Date of Birth</Label>
+                      <Input id="dob" type="date" className="bg-white/10 border-white/10 text-white h-12 rounded-xl" value={newChild.dob} onChange={(e) => setNewChild({...newChild, dob: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-white/60">Gender</Label>
+                        <Select value={newChild.gender} onValueChange={(v) => setNewChild({...newChild, gender: v})}>
+                          <SelectTrigger className="bg-white/10 border-white/10 text-white h-12 rounded-xl">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent className="glass-panel text-foreground">
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                            <SelectItem value="unknown">Prefer not to say</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <Button onClick={handleAddChild} className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 font-bold mt-4 shadow-glow">
+                      Create Profile
+                    </Button>
+                 </div>
+               </div>
+            </DialogContent>
+          </Dialog>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
+    <div className="min-h-screen bg-gradient-newro flex flex-col font-sans">
+      <div className="absolute top-[10%] left-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-ai-purple/5 rounded-full blur-[150px] pointer-events-none" />
+
       {/* Header */}
-      <header className="bg-card/80 backdrop-blur-sm border-b border-border sticky top-0 z-50">
+      <header className="bg-white/70 backdrop-blur-md border-b border-white/40 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-gradient-cta flex items-center justify-center">
-              <Brain className="w-5 h-5 text-primary-foreground" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-cta flex items-center justify-center shadow-glow">
+              <Brain className="w-5 h-5 text-white" />
             </div>
-            <span className="font-display font-bold text-xl">Newro</span>
+            <span className="font-display font-bold text-2xl tracking-tight text-foreground">Newro</span>
           </Link>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm">
-              <User className="w-4 h-4 text-muted-foreground" />
-              <span className="text-muted-foreground">{profile?.full_name || user?.email}</span>
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 border border-white/40 text-sm">
+              <User className="w-4 h-4 text-primary" />
+              <span className="font-medium text-foreground">{profile?.full_name || user?.email}</span>
             </div>
-            <Button variant="ghost" size="sm" onClick={signOut}>
-              <LogOut className="w-4 h-4" />
+            <Button variant="ghost" size="icon" onClick={signOut} className="hover:bg-rose-500/10 hover:text-rose-500 rounded-full transition-colors">
+              <LogOut className="w-5 h-5" />
             </Button>
           </div>
         </div>
@@ -293,38 +391,42 @@ const ParentDashboard = () => {
             ) : (
               <div className="space-y-2">
                 {children.map(child => (
-                  <motion.div
-                    key={child.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                  >
-                    <Card
-                      className={`cursor-pointer transition-all ${
-                        selectedChild?.id === child.id ? "border-primary bg-secondary/50" : "hover:border-primary/30"
-                      }`}
-                      onClick={() => setSelectedChild(child)}
+                    <motion.div
+                      key={child.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      whileHover={{ scale: 1.02 }}
+                      className="w-full"
                     >
-                      <CardContent className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Baby className="w-5 h-5 text-primary" />
+                      <div
+                        className={`cursor-pointer transition-all p-4 rounded-2xl border flex items-center justify-between group overflow-hidden relative ${
+                          selectedChild?.id === child.id 
+                            ? "border-primary bg-white/90 shadow-glow-ai ring-1 ring-primary/20" 
+                            : "border-white/60 bg-white/40 hover:border-primary/40 hover:bg-white/60 backdrop-blur-sm"
+                        }`}
+                        onClick={() => setSelectedChild(child)}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
+                            selectedChild?.id === child.id ? "bg-primary text-white" : "bg-primary/10 text-primary"
+                          }`}>
+                            <Baby className="w-6 h-6" />
                           </div>
                           <div>
-                            <p className="font-medium">{child.name}</p>
-                            <p className="text-xs text-muted-foreground">{getChildAge(child.date_of_birth)}</p>
+                            <p className="font-bold text-foreground">{child.name}</p>
+                            <p className="text-xs text-muted-foreground font-medium">{getChildAge(child.date_of_birth)}</p>
                           </div>
                         </div>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          className="h-8 w-8 text-muted-foreground hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={(e) => { e.stopPropagation(); handleDeleteChild(child.id); }}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
+                      </div>
+                    </motion.div>
                 ))}
               </div>
             )}
@@ -364,16 +466,19 @@ const ParentDashboard = () => {
                     </Card>
 
                     {/* Quick Stats */}
-                    <Card>
+                    <Card className="glass-panel border-white/40 shadow-sm overflow-hidden group">
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-muted-foreground">Assessments</CardTitle>
+                        <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex justify-between items-center">
+                          Assessments
+                          <Activity className="w-4 h-4 text-primary opacity-50 group-hover:scale-110 transition-transform" />
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="font-display text-3xl font-bold text-primary">{assessments.length}</p>
-                        <p className="text-sm text-muted-foreground">completed assessments</p>
-                        <Link to="/assessments">
-                          <Button variant="link" className="p-0 h-auto mt-2 text-primary">
-                            Start new assessment <ChevronRight className="w-4 h-4" />
+                        <p className="font-display text-4xl font-black text-primary leading-none mb-1">{assessments.length}</p>
+                        <p className="text-xs font-medium text-muted-foreground">completed evaluations</p>
+                        <Link to="/screening">
+                          <Button variant="link" className="p-0 h-auto mt-4 text-primary font-bold text-xs hover:gap-2 transition-all">
+                            New Screening <ChevronRight className="w-4 h-4" />
                           </Button>
                         </Link>
                       </CardContent>
@@ -401,41 +506,63 @@ const ParentDashboard = () => {
                   </div>
 
                   {/* Milestone Progress Overview */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-primary" />
-                        Milestone Progress
+                  {/* Milestone Progress Overview */}
+                  <Card className="glass-panel border-white/40 shadow-sm overflow-hidden group">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex justify-between items-center">
+                        Milestone Tracking
+                        <Brain className="w-4 h-4 text-primary opacity-50 group-hover:rotate-12 transition-transform" />
                       </CardTitle>
-                      <CardDescription>Developmental milestones for {selectedChild.name}</CardDescription>
+                      <CardDescription className="text-[10px] font-medium opacity-70">Developmental Score for {selectedChild.name}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                       {(() => {
                         const progress = getMilestoneProgress(getChildMonths(selectedChild.date_of_birth));
                         return (
-                          <>
-                            <div className="space-y-2">
-                              <div className="flex justify-between text-sm">
-                                <span className="font-medium">Speech & Language</span>
-                                <span className="text-primary font-semibold">{progress.speech}%</span>
+                          <div className="flex flex-col gap-4">
+                            <div className="space-y-1.5">
+                              <div className="flex justify-between text-[11px] font-bold">
+                                <span className="text-foreground/80 lowercase italic">speech & language</span>
+                                <span className="text-primary">{progress.speech}%</span>
                               </div>
-                              <Progress value={progress.speech} className="h-3" />
-                            </div>
-                            <div className="space-y-2">
-                              <div className="flex justify-between text-sm">
-                                <span className="font-medium">Motor Skills</span>
-                                <span className="text-primary font-semibold">{progress.motor}%</span>
+                              <div className="h-1.5 w-full bg-primary/10 rounded-full overflow-hidden">
+                                <motion.div 
+                                  initial={{ width: 0 }} 
+                                  animate={{ width: `${progress.speech}%` }} 
+                                  transition={{ duration: 1, ease: "easeOut" }}
+                                  className="h-full bg-gradient-to-r from-primary to-ai-purple rounded-full" 
+                                />
                               </div>
-                              <Progress value={progress.motor} className="h-3" />
                             </div>
-                          </>
+                            <div className="space-y-1.5">
+                              <div className="flex justify-between text-[11px] font-bold">
+                                <span className="text-foreground/80 lowercase italic">motor skills</span>
+                                <span className="text-primary">{progress.motor}%</span>
+                              </div>
+                              <div className="h-1.5 w-full bg-primary/10 rounded-full overflow-hidden">
+                                <motion.div 
+                                  initial={{ width: 0 }} 
+                                  animate={{ width: `${progress.motor}%` }} 
+                                  transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+                                  className="h-full bg-gradient-to-r from-primary to-teal-glow rounded-full" 
+                                />
+                              </div>
+                            </div>
+                            <div className="pt-4 mt-2 border-t border-white/20 flex items-center justify-between">
+                                <div className="flex -space-x-2">
+                                    {[1,2,3].map(i => (
+                                        <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+                                            {i}
+                                        </div>
+                                    ))}
+                                </div>
+                                <Link to="/milestones" className="text-[10px] font-black uppercase text-primary hover:underline flex items-center gap-1">
+                                    Full Report <ArrowUpRight className="w-3 h-3" />
+                                </Link>
+                            </div>
+                          </div>
                         );
                       })()}
-                      <Link to="/milestones">
-                        <Button className="w-full mt-4" variant="outline">
-                          Open Full Milestone Tracker
-                        </Button>
-                      </Link>
                     </CardContent>
                   </Card>
                 </TabsContent>

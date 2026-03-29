@@ -30,12 +30,18 @@ const Signup = () => {
       return;
     }
     setLoading(true);
-    const { error } = await signUp(email, password, name, selectedRole);
+    const { data, error } = await signUp(email, password, name, selectedRole);
     setLoading(false);
+    
     if (error) {
       toast.error(error.message);
+    } else if (data.user && !data.session) {
+      toast.info("Account created! Please check your email to confirm your account before signing in.", {
+        duration: 10000,
+      });
+      navigate("/login");
     } else {
-      toast.success("Account created! Redirecting...");
+      toast.success("Welcome to Newro!");
       navigate("/dashboard");
     }
   };
@@ -93,7 +99,7 @@ const Signup = () => {
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
-            <Button className="w-full shadow-glow" size="lg" disabled={loading}>
+            <Button className="w-full shadow-glow" size="lg" disabled={loading} type="submit">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Account
             </Button>

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, BrainCircuit, Activity } from "lucide-react";
+import { ArrowRight, Activity, Brain, Shield, Clock, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 const HeroSection = () => {
@@ -34,9 +34,9 @@ const HeroSection = () => {
             className="flex flex-col items-center"
           >
             <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full glass-panel text-sm font-medium mb-8 text-primary border-primary/20 shadow-glow">
-              <BrainCircuit className="w-4 h-4 animate-pulse text-ai-purple" />
+              <Brain className="w-5 h-5" />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-ai-purple">
-                AI-Powered Neurodevelopment Intelligence
+                AI Clinical Interpretation
               </span>
             </div>
 
@@ -50,20 +50,29 @@ const HeroSection = () => {
               Intelligent milestone tracking, automated clinical reports, and smart therapy plans—designed for children, parents, and therapists.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-5 w-full sm:w-auto">
-              <Button size="lg" asChild className="rounded-full shadow-glow bg-primary hover:bg-primary/90 h-14 px-8 text-lg w-full sm:w-auto text-white">
-                <Link to="/assessments">
-                  Start AI Screening
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild className="rounded-full glass-panel hover:bg-white/60 h-14 px-8 text-lg border-primary/20 text-foreground w-full sm:w-auto shadow-sm transition-all">
-                <Link to="/signup">
-                  <Activity className="mr-2 w-5 h-5 text-ai-purple" />
-                  View Therapy Plans
-                </Link>
-              </Button>
-            </div>
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 mb-10">
+                <Button size="lg" className="rounded-full shadow-glow h-14 px-8 text-lg font-medium group" asChild>
+                  <Link to="/screening">
+                    Start AI Screening
+                    <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </Button>
+                <Button variant="outline" size="lg" className="rounded-full glass-panel h-14 px-8 text-lg font-medium border-primary/20 backdrop-blur-md" asChild>
+                  <Link to="/therapy">View Therapy Plans</Link>
+                </Button>
+              </div>
+              
+              <div className="flex flex-wrap items-center justify-center gap-6 mt-4">
+                <Button variant="ghost" className="rounded-full text-foreground hover:bg-primary/10 px-8 h-12 font-bold group" asChild>
+                  <Link to="/login">
+                    Login
+                    <ChevronRight className="w-4 h-4 ml-1 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-1" />
+                  </Link>
+                </Button>
+                <Button variant="link" className="text-muted-foreground hover:text-primary transition-colors font-bold" asChild>
+                  <Link to="/signup">Create Account</Link>
+                </Button>
+              </div>
             
             <div className="mt-16 flex items-center justify-center gap-8 opacity-60">
                 <div className="flex flex-col items-center gap-2">
