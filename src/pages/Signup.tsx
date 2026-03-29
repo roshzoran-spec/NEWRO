@@ -30,19 +30,33 @@ const Signup = () => {
       return;
     }
     setLoading(true);
-    const { data, error } = await signUp(email, password, name, selectedRole);
-    setLoading(false);
-    
-    if (error) {
-      toast.error(error.message);
-    } else if (data.user && !data.session) {
-      toast.info("Account created! Please check your email to confirm your account before signing in.", {
-        duration: 10000,
-      });
-      navigate("/login");
-    } else {
-      toast.success("Welcome to Newro!");
-      navigate("/dashboard");
+
+    // Safety timeout to prevent infinite loading in case of Supabase deadlock
+    const safetyTimer = setTimeout(() => {
+      setLoading(false);
+      toast.error("Registration is taking longer than expected. Please refresh the page if it hangs.");
+    }, 10000);
+
+    try {
+      const { data, error } = await signUp(email, password, name, selectedRole);
+      clearTimeout(safetyTimer);
+      setLoading(false);
+      
+      if (error) {
+        toast.error(error.message);
+      } else if (data.user && !data.session) {
+        toast.info("Account created! Please check your email to confirm your account before signing in.", {
+          duration: 10000,
+        });
+        navigate("/login");
+      } else {
+        toast.success("Welcome to Newro!");
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      clearTimeout(safetyTimer);
+      setLoading(false);
+      toast.error("An unexpected error occurred. Please try again.");
     }
   };
 

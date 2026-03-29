@@ -5,13 +5,25 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  console.error("Missing Supabase environment variables! Auth will fail.");
+}
+
 // Clear any stale auth locks on initialization to prevent "Lock not released" errors
 if (typeof window !== 'undefined') {
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.includes('auth-token') && key.includes('lock')) {
-      localStorage.removeItem(key);
+  try {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('auth-token') || key.includes('supabase.auth.token'))) {
+        if (key.includes('lock')) {
+          keysToRemove.push(key);
+        }
+      }
     }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+  } catch (e) {
+    // Silence during production, but keep for safety
   }
 }
 

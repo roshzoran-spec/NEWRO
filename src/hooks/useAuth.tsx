@@ -28,17 +28,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
+    console.log(`[useAuth] fetchProfile started for ${userId}`);
+    const fetchStart = Date.now();
+    
+    // Safety timeout for the profile query itself
+    const queryTimeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Profile fetch timeout")), 5000)
+    );
+
     try {
-      const { data, error } = await supabase
+      const query = supabase
         .from("profiles")
         .select("*")
         .eq("id", userId)
         .single();
+        
+      const { data, error } = await Promise.race([query, queryTimeout]) as any;
       
-      if (error) throw error;
-      if (data) setProfile(data as Profile);
-    } catch (err) {
-      console.error("Error fetching profile:", err);
+      console.log(`[useAuth] fetchProfile query finished in ${Date.now() - fetchStart}ms`);
+      
+      if (error) {
+        console.warn("[useAuth] Profile fetch error (expected if new user):", error.message);
+        return;
+      }
+      if (data) {
+        console.log("[useAuth] Profile data updated");
+        setProfile(data as Profile);
+      }
+    } catch (err: any) {
+      console.error("[useAuth] Error in fetchProfile:", err.message);
     }
   };
 
@@ -47,26 +65,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          fetchProfile(session.user.id);
         } else {
           setProfile(null);
         }
+        
         setLoading(false);
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
-      else setLoading(false);
-    }).catch(() => setLoading(false));
+    const initSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchProfile(session.user.id);
+        }
+      } catch (err) {
+        console.error("Initial session check failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    // Safety timeout to prevent infinite buffering if Supabase hangs
+    initSession();
+
+    // Global safety timer
     const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2500);
+      if (loading) {
+        setLoading(false);
+      }
+    }, 5000);
 
     return () => {
       subscription.unsubscribe();
@@ -75,17 +109,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string, role: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName, role } },
-    });
-    return { data, error };
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: fullName, role } },
+      });
+      return { data: { user: data.user, session: data.session }, error };
+    } catch (err: any) {
+      return { data: { user: null, session: null }, error: err };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      return { error };
+    } catch (err: any) {
+      return { error: err };
+    }
   };
 
   const signOut = async () => {

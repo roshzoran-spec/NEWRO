@@ -18,19 +18,34 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await signIn(email, password);
-    setLoading(false);
-    if (error) {
-      if (error.message.toLowerCase().includes("email not confirmed")) {
-        toast.error("Please confirm your email address before signing in. Check your inbox for the confirmation link.");
-      } else if (error.message.toLowerCase().includes("invalid login credentials")) {
-        toast.error("Invalid email or password. Please try again.");
+    
+    // Safety timeout to prevent infinite loading in case of Supabase deadlock
+    const safetyTimer = setTimeout(() => {
+      setLoading(false);
+      toast.error("Sign-in is taking longer than expected. Please refresh the page if it hangs.");
+    }, 10000);
+
+    try {
+      const { error } = await signIn(email, password);
+      clearTimeout(safetyTimer);
+      setLoading(false);
+      
+      if (error) {
+        if (error.message.toLowerCase().includes("email not confirmed")) {
+          toast.error("Please confirm your email address before signing in. Check your inbox for the confirmation link.");
+        } else if (error.message.toLowerCase().includes("invalid login credentials")) {
+          toast.error("Invalid email or password. Please try again.");
+        } else {
+          toast.error(error.message);
+        }
       } else {
-        toast.error(error.message);
+        toast.success("Welcome back!");
+        navigate("/dashboard");
       }
-    } else {
-      toast.success("Welcome back!");
-      navigate("/dashboard");
+    } catch (err) {
+      clearTimeout(safetyTimer);
+      setLoading(false);
+      toast.error("An unexpected error occurred. Please try again.");
     }
   };
 
