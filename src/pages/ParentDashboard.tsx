@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { format, differenceInMonths, isPast, isToday, addDays } from "date-fns";
 import { calculateAchievement, getMilestonesForAge } from "@/data/milestones";
 import type { Database } from "@/integrations/supabase/types";
+import DashboardOverview from "@/components/dashboard/DashboardOverview";
 
 interface Child {
   id: string;
@@ -196,17 +197,18 @@ const ParentDashboard = () => {
       ]);
 
       if (insertResult.error) {
+        const err = insertResult.error as any;
         const errorText = [
-          insertResult.error.message,
-          insertResult.error.code ? `(code: ${insertResult.error.code})` : "",
-          insertResult.error.hint ? `Hint: ${insertResult.error.hint}` : "",
+          err.message,
+          err.code ? `(code: ${err.code})` : "",
+          err.hint ? `Hint: ${err.hint}` : "",
         ]
           .filter(Boolean)
           .join(" ");
 
-        const normalizedError = insertResult.error.message.toLowerCase();
+        const normalizedError = err.message.toLowerCase();
 
-        if (normalizedError.includes("jwt") || normalizedError.includes("auth") || insertResult.error.code === "PGRST301") {
+        if (normalizedError.includes("jwt") || normalizedError.includes("auth") || err.code === "PGRST301") {
           toast.error("Your session has expired. Please sign in again.");
           navigate("/login", { replace: true });
           return;
@@ -518,7 +520,7 @@ const ParentDashboard = () => {
                           </div>
                           <div>
                             <p className="font-bold text-foreground">{child.name}</p>
-                            <p className="text-xs text-muted-foreground font-medium">{getChildAge(child.date_of_birth)}</p>
+                            <p className="text-xs text-muted-foreground font-black uppercase tracking-tight">{getChildAge(child.date_of_birth)}</p>
                           </div>
                         </div>
                         <Button
@@ -549,126 +551,10 @@ const ParentDashboard = () => {
 
                 {/* Overview Tab */}
                 <TabsContent value="overview" className="space-y-6">
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {/* Child Info Card */}
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-muted-foreground">Child Profile</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 rounded-full bg-gradient-cta flex items-center justify-center">
-                            <Baby className="w-7 h-7 text-primary-foreground" />
-                          </div>
-                          <div>
-                            <p className="font-display font-semibold text-lg">{selectedChild.name}</p>
-                            <p className="text-sm text-muted-foreground">{getChildAge(selectedChild.date_of_birth)}</p>
-                            <Badge variant="secondary" className="mt-1 text-xs">{getChildMonths(selectedChild.date_of_birth)} months</Badge>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Quick Stats */}
-                    <Card className="glass-panel border-white/40 shadow-sm overflow-hidden group">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex justify-between items-center">
-                          Assessments
-                          <Activity className="w-4 h-4 text-primary opacity-50 group-hover:scale-110 transition-transform" />
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="font-display text-4xl font-black text-primary leading-none mb-1">{assessments.length}</p>
-                        <p className="text-xs font-medium text-muted-foreground">completed evaluations</p>
-                        <Link to="/screening">
-                          <Button variant="link" className="p-0 h-auto mt-4 text-primary font-bold text-xs hover:gap-2 transition-all">
-                            New Screening <ChevronRight className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                      </CardContent>
-                    </Card>
-
-                    {/* Reminders Card */}
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-muted-foreground">Reminders</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center gap-4">
-                          <div>
-                            <p className="font-display text-3xl font-bold">{upcomingReminders.length}</p>
-                            <p className="text-sm text-muted-foreground">upcoming</p>
-                          </div>
-                          {overdueReminders.length > 0 && (
-                            <Badge variant="destructive" className="ml-auto">
-                              {overdueReminders.length} overdue
-                            </Badge>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Milestone Progress Overview */}
-                  {/* Milestone Progress Overview */}
-                  <Card className="glass-panel border-white/40 shadow-sm overflow-hidden group">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex justify-between items-center">
-                        Milestone Tracking
-                        <Brain className="w-4 h-4 text-primary opacity-50 group-hover:rotate-12 transition-transform" />
-                      </CardTitle>
-                      <CardDescription className="text-[10px] font-medium opacity-70">Developmental Score for {selectedChild.name}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      {(() => {
-                        const progress = getMilestoneProgress(getChildMonths(selectedChild.date_of_birth));
-                        return (
-                          <div className="flex flex-col gap-4">
-                            <div className="space-y-1.5">
-                              <div className="flex justify-between text-[11px] font-bold">
-                                <span className="text-foreground/80 lowercase italic">speech & language</span>
-                                <span className="text-primary">{progress.speech}%</span>
-                              </div>
-                              <div className="h-1.5 w-full bg-primary/10 rounded-full overflow-hidden">
-                                <motion.div 
-                                  initial={{ width: 0 }} 
-                                  animate={{ width: `${progress.speech}%` }} 
-                                  transition={{ duration: 1, ease: "easeOut" }}
-                                  className="h-full bg-gradient-to-r from-primary to-ai-purple rounded-full" 
-                                />
-                              </div>
-                            </div>
-                            <div className="space-y-1.5">
-                              <div className="flex justify-between text-[11px] font-bold">
-                                <span className="text-foreground/80 lowercase italic">motor skills</span>
-                                <span className="text-primary">{progress.motor}%</span>
-                              </div>
-                              <div className="h-1.5 w-full bg-primary/10 rounded-full overflow-hidden">
-                                <motion.div 
-                                  initial={{ width: 0 }} 
-                                  animate={{ width: `${progress.motor}%` }} 
-                                  transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-                                  className="h-full bg-gradient-to-r from-primary to-teal-glow rounded-full" 
-                                />
-                              </div>
-                            </div>
-                            <div className="pt-4 mt-2 border-t border-white/20 flex items-center justify-between">
-                                <div className="flex -space-x-2">
-                                    {[1,2,3].map(i => (
-                                        <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
-                                            {i}
-                                        </div>
-                                    ))}
-                                </div>
-                                <Link to="/milestones" className="text-[10px] font-black uppercase text-primary hover:underline flex items-center gap-1">
-                                    Full Report <ArrowUpRight className="w-3 h-3" />
-                                </Link>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </CardContent>
-                  </Card>
+                  <DashboardOverview 
+                    child={selectedChild} 
+                    parentName={profile?.full_name || user?.email} 
+                  />
                 </TabsContent>
 
                 {/* Milestones Tab */}
