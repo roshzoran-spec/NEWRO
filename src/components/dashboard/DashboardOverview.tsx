@@ -41,9 +41,17 @@ interface Child {
   notes: string;
 }
 
+interface AssessmentItem {
+  id: string;
+  title: string;
+  assessment_type: string;
+  created_at: string;
+}
+
 interface DashboardOverviewProps {
   child: Child;
   parentName?: string;
+  assessments?: AssessmentItem[];
 }
 
 const generateHistoricalData = (ageInMonths: number) => {
@@ -111,7 +119,7 @@ const StatusCard = ({ domain, status, color, icon: Icon, delay = 0 }: any) => {
   );
 };
 
-const DashboardOverview = ({ child, parentName }: DashboardOverviewProps) => {
+const DashboardOverview = ({ child, parentName, assessments = [] }: DashboardOverviewProps) => {
   const dob = new Date(child.date_of_birth);
   const now = new Date();
   const diffMonths = (now.getFullYear() - dob.getFullYear()) * 12 + (now.getMonth() - dob.getMonth());
@@ -353,16 +361,26 @@ const DashboardOverview = ({ child, parentName }: DashboardOverviewProps) => {
               <h3 className="text-sm font-black tracking-widest uppercase text-muted-foreground flex items-center gap-2">
                  <ClipboardList size={14} className="text-primary" /> Recent Activity
               </h3>
-              <div className="space-y-3">
-                 <div className="p-4 rounded-[1.5rem] border border-white/60 bg-white/40 shadow-sm">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Mar 28, 2024</p>
-                    <p className="text-[11px] font-black text-foreground uppercase tracking-tight">General Screening Completed</p>
-                 </div>
-                 <div className="p-4 rounded-[1.5rem] border border-white/60 bg-white/40 shadow-sm">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Mar 25, 2024</p>
-                    <p className="text-[11px] font-black text-foreground uppercase tracking-tight">AI Clinical Report Generated</p>
-                 </div>
-              </div>
+              {assessments.length === 0 ? (
+                <div className="p-4 rounded-[1.5rem] border border-white/60 bg-white/40 shadow-sm">
+                  <p className="text-[11px] font-black text-foreground uppercase tracking-tight">No assessments yet</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Start a screening to build history</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {assessments.slice(0, 3).map((assessment) => (
+                    <div key={assessment.id} className="p-4 rounded-[1.5rem] border border-white/60 bg-white/40 shadow-sm">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                        {new Date(assessment.created_at).toLocaleDateString()}
+                      </p>
+                      <p className="text-[11px] font-black text-foreground uppercase tracking-tight">{assessment.title}</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
+                        {assessment.assessment_type}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
            </div>
 
            {/* Quick Actions Panel */}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -105,6 +105,8 @@ const Milestones = () => {
   })();
 
   // Use placeholder domain scores (or from answers if available)
+  const ageAppropriateMilestones = useMemo(() => getQuestionsForAge(ageMonths), [ageMonths]);
+
   const domainScores = useMemo(() => {
     const hasAnswers = Object.keys(answers).length > 0;
     if (!hasAnswers) {
@@ -115,9 +117,8 @@ const Milestones = () => {
         { domain: "cognitive", score: 82, status: "On Track" as const },
       ];
     }
-    const qs = getQuestionsForAge(ageMonths);
-    return computeDomainScores(answers, qs);
-  }, [answers, ageMonths]);
+    return computeDomainScores(answers, ageAppropriateMilestones);
+  }, [answers, ageAppropriateMilestones]);
 
   const overallScore = Math.round(domainScores.reduce((s, d) => s + d.score, 0) / domainScores.length);
   const overallStatus = domainScores.some(d => d.status === "Needs Attention")
@@ -127,6 +128,12 @@ const Milestones = () => {
     : "On Track";
 
   const needsAttention = domainScores.filter(d => d.status !== "On Track");
+  const milestonesByDomain = useMemo(() => {
+    return DOMAIN_CONFIG.map((domain) => ({
+      ...domain,
+      milestones: ageAppropriateMilestones.filter((milestone) => milestone.domain === domain.id),
+    }));
+  }, [ageAppropriateMilestones]);
 
   if (loading) {
     return (
@@ -364,7 +371,63 @@ const Milestones = () => {
                   })}
                 </div>
 
-                {/* ── Section D: Update CTA ── */}
+                {/* ── Section D: Age-Appropriate Milestones ── */}
+                <div className="mb-12">
+                  <h3 className="font-black text-2xl text-foreground mb-6 px-2 tracking-tight">
+                    Age-Appropriate Milestones
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {milestonesByDomain.map((domainBlock) => {
+                      const Icon = domainBlock.icon;
+                      return (
+                        <div
+                          key={domainBlock.id}
+                          className="glass-panel border-white/40 p-6 rounded-[2rem] shadow-lg"
+                        >
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className={`w-10 h-10 rounded-xl ${domainBlock.bg} bg-opacity-10 flex items-center justify-center ${domainBlock.color}`}>
+                              <Icon className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <p className="font-black text-sm text-foreground uppercase tracking-widest">{domainBlock.name}</p>
+                              <p className="text-xs text-muted-foreground font-bold">
+                                {domainBlock.milestones.length} milestones in scope
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2 max-h-64 overflow-auto pr-1">
+                            {domainBlock.milestones.map((milestone) => {
+                              const isAnswered = answers[milestone.id] !== undefined;
+                              return (
+                                <div key={milestone.id} className="rounded-xl border border-white/50 bg-white/40 p-3">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <p className="text-sm font-bold text-foreground leading-snug">{milestone.question}</p>
+                                    <Badge
+                                      className={
+                                        isAnswered
+                                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                                          : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                      }
+                                      variant="outline"
+                                    >
+                                      {isAnswered ? "Tracked" : "Pending"}
+                                    </Badge>
+                                  </div>
+                                  <p className="mt-2 text-[11px] text-muted-foreground font-bold uppercase tracking-wider">
+                                    Expected: {milestone.minAge}-{milestone.maxAge} months
+                                  </p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ── Section E: Update CTA ── */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -378,7 +441,7 @@ const Milestones = () => {
                     <div>
                       <h4 className="font-black text-foreground text-lg tracking-tight">Ready to update milestones?</h4>
                       <p className="text-sm text-muted-foreground font-bold">
-                        Answer {ageMonths < 12 ? "12" : "16"}+ age-specific questions across all 4 domains. Takes ~5 minutes.
+                        Answer {ageAppropriateMilestones.length} age-specific milestones across all 4 domains. Takes ~5 minutes.
                       </p>
                     </div>
                   </div>

@@ -29,6 +29,16 @@ const clearSupabaseSessionCache = () => {
     .forEach((key) => localStorage.removeItem(key));
 };
 
+const clearSupabaseLockKeys = () => {
+  Object.keys(localStorage)
+    .filter(
+      (key) =>
+        key.includes("lock:sb-") ||
+        (key.includes("supabase.auth.token") && key.includes("lock"))
+    )
+    .forEach((key) => localStorage.removeItem(key));
+};
+
 const isRecoverableSignOutLockError = (error: unknown) => {
   return error instanceof Error && error.message.includes('Lock "lock:sb-') && error.message.includes("was released because another request stole it");
 };
@@ -135,7 +145,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
+      clearSupabaseLockKeys();
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (!error && data.session) {
+        // Keep the active device signed in while revoking stale sessions elsewhere.
+        const { error: revokeError } = await supabase.auth.signOut({ scope: "others" });
+        if (revokeError) {
+          console.warn("[useAuth] Could not revoke other sessions after sign-in:", revokeError.message);
+        }
+      }
+
       return { error };
     } catch (err: any) {
       return { error: err };
@@ -150,18 +170,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updatePassword = async (password: string) => {
     const { error } = await supabase.auth.updateUser({ password });
-    return { error };
+    if (error) return { error };
+
+    // After password change, revoke sessions on other devices for account safety.
+    const { error: revokeError } = await supabase.auth.signOut({ scope: "others" });
+    if (revokeError) {
+      console.warn("[useAuth] Could not revoke other sessions after password update:", revokeError.message);
+    }
+
+    return { error: null };
   };
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut({ scope: "local" });
+      clearSupabaseLockKeys();
+      const { error: globalError } = await supabase.auth.signOut({ scope: "global" });
 
-      if (error && !isRecoverableSignOutLockError(error)) {
-        return { error };
+      if (globalError && !isRecoverableSignOutLockError(globalError)) {
+        const { error: localError } = await supabase.auth.signOut({ scope: "local" });
+        if (localError && !isRecoverableSignOutLockError(localError)) {
+          return { error: localError };
+        }
       }
 
       clearSupabaseSessionCache();
+      clearSupabaseLockKeys();
       setUser(null);
       setSession(null);
       setProfile(null);

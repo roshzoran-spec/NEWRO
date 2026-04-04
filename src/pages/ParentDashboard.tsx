@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import {
   Brain, Baby, Plus, Bell, Calendar, ClipboardList, TrendingUp,
-  Trash2, Edit, ChevronRight, User, LogOut, Loader2, CheckCircle2, AlertCircle, MessageCircle, Video, Activity, ArrowUpRight
+  Trash2, Edit, ChevronRight, User, LogOut, Loader2, CheckCircle2, AlertCircle, Video, Activity, ArrowUpRight, MessageCircle
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +52,7 @@ interface Reminder {
 }
 
 type ChildInsert = Database["public"]["Tables"]["children"]["Insert"];
+const SELECTED_CHILD_STORAGE_KEY = "newro_selected_child_id";
 
 const ParentDashboard = () => {
   const { user, profile, signOut } = useAuth();
@@ -67,6 +68,7 @@ const ParentDashboard = () => {
   const [showAddReminder, setShowAddReminder] = useState(false);
   const [newChild, setNewChild] = useState({ name: "", dob: "", gender: "unknown", notes: "" });
   const [newReminder, setNewReminder] = useState({ title: "", description: "", date: "", type: "milestone" });
+  const [activeMainTab, setActiveMainTab] = useState("overview");
 
   // Fetch data
   useEffect(() => {
@@ -86,6 +88,14 @@ const ParentDashboard = () => {
   }, [selectedChild]);
 
   useEffect(() => {
+    if (!selectedChild) {
+      sessionStorage.removeItem(SELECTED_CHILD_STORAGE_KEY);
+      return;
+    }
+    sessionStorage.setItem(SELECTED_CHILD_STORAGE_KEY, selectedChild.id);
+  }, [selectedChild]);
+
+  useEffect(() => {
     if (!addingChild) return;
     const timer = window.setTimeout(() => {
       setAddingChild(false);
@@ -96,11 +106,14 @@ const ParentDashboard = () => {
 
   const fetchChildren = async () => {
     if (user?.id === "guest-user-123") {
-      setChildren([
+      const guestChildren: Child[] = [
         { id: "c1", name: "Leo", date_of_birth: addDays(new Date(), -1250).toISOString(), gender: "male", notes: "Bright and active" },
         { id: "c2", name: "Mia", date_of_birth: addDays(new Date(), -700).toISOString(), gender: "female", notes: "Loves music" }
-      ]);
-      setSelectedChild({ id: "c1", name: "Leo", date_of_birth: addDays(new Date(), -1250).toISOString(), gender: "male", notes: "Bright and active" });
+      ];
+      const preferredGuestId = sessionStorage.getItem(SELECTED_CHILD_STORAGE_KEY);
+      const preferredGuestChild = guestChildren.find((child) => child.id === preferredGuestId) ?? guestChildren[0];
+      setChildren(guestChildren);
+      setSelectedChild(preferredGuestChild);
       setLoading(false);
       return;
     }
@@ -118,8 +131,16 @@ const ParentDashboard = () => {
       }
 
       if (result.data) {
-        setChildren(result.data as Child[]);
-        if (result.data.length > 0 && !selectedChild) setSelectedChild(result.data[0] as Child);
+        const loadedChildren = result.data as Child[];
+        setChildren(loadedChildren);
+
+        if (loadedChildren.length > 0) {
+          const preferredChildId = sessionStorage.getItem(SELECTED_CHILD_STORAGE_KEY);
+          const preferredChild = loadedChildren.find((child) => child.id === preferredChildId) ?? loadedChildren[0];
+          setSelectedChild(preferredChild);
+        } else {
+          setSelectedChild(null);
+        }
       }
     } finally {
       setLoading(false);
@@ -295,6 +316,15 @@ const ParentDashboard = () => {
     navigate("/login", { replace: true });
   };
 
+  const handleDashboardTabChange = (value: string) => {
+    if (value === "video-screening") {
+      navigate("/video-screening");
+      return;
+    }
+
+    setActiveMainTab(value);
+  };
+
   // Calculate child age
   const getChildAge = (dob: string) => {
     const months = differenceInMonths(new Date(), new Date(dob));
@@ -419,6 +449,12 @@ const ParentDashboard = () => {
               <User className="w-4 h-4 text-primary" />
               <span className="font-medium text-foreground">{profile?.full_name || user?.email}</span>
             </div>
+            <Link to="/chat">
+              <Button className="rounded-full shadow-glow h-10 bg-gradient-to-r from-[#6FE7DD] to-[#7AA7FF] text-foreground font-black">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Ask Newro AI
+              </Button>
+            </Link>
             <Button variant="ghost" size="icon" onClick={handleSignOut} className="hover:bg-rose-500/10 hover:text-rose-500 rounded-full transition-colors" disabled={loggingOut}>
               <LogOut className="w-5 h-5" />
             </Button>
@@ -541,10 +577,11 @@ const ParentDashboard = () => {
           {/* Main Content */}
           <div className="lg:col-span-3">
             {selectedChild ? (
-              <Tabs defaultValue="overview" className="space-y-6">
+              <Tabs value={activeMainTab} onValueChange={handleDashboardTabChange} className="space-y-6">
                 <TabsList className="bg-muted">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="milestones">Milestones</TabsTrigger>
+                  <TabsTrigger value="video-screening">Video Screening</TabsTrigger>
                   <TabsTrigger value="history">Assessment History</TabsTrigger>
                   <TabsTrigger value="reminders">Reminders</TabsTrigger>
                 </TabsList>
@@ -554,6 +591,7 @@ const ParentDashboard = () => {
                   <DashboardOverview 
                     child={selectedChild} 
                     parentName={profile?.full_name || user?.email} 
+                    assessments={assessments}
                   />
                 </TabsContent>
 
@@ -571,18 +609,31 @@ const ParentDashboard = () => {
                           <ChevronRight className="w-4 h-4 ml-2" />
                         </Button>
                       </Link>
-                      <Link to="/chat">
-                        <Button variant="outline" className="mt-2">
-                          <MessageCircle className="w-4 h-4 mr-2" />
-                          Ask Newro AI
-                        </Button>
-                      </Link>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="video-screening">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Video className="w-5 h-5 text-primary" />
+                        Video Screening
+                      </CardTitle>
+                      <CardDescription>
+                        Upload and analyze screening clips for {selectedChild.name} with AI-assisted observations.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
                       <Link to="/video-screening">
-                        <Button variant="outline" className="mt-2">
-                          <Video className="w-4 h-4 mr-2" />
-                          Video Screening
+                        <Button className="shadow-glow">
+                          Open Video Screening
+                          <ChevronRight className="w-4 h-4 ml-2" />
                         </Button>
                       </Link>
+                      <p className="text-sm text-muted-foreground">
+                        You can review uploaded videos, run AI analysis, and track progress over time.
+                      </p>
                     </CardContent>
                   </Card>
                 </TabsContent>

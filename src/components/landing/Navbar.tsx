@@ -13,6 +13,7 @@ const Navbar = () => {
     { label: "Screening", to: "/screening" },
     { label: "Therapy", to: "/therapy" },
     { label: "Milestones", to: "/milestones" },
+    ...(user ? [{ label: "Video Screening", to: "/video-screening" }] : []),
     { label: "Consultation", to: "/consultation" },
   ];
 
@@ -115,4 +116,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-

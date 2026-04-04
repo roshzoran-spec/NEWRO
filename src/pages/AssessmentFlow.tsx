@@ -5,10 +5,15 @@ import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { assessmentTypes, assessmentQuestions, calculateResults } from "@/data/assessments";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+
+const SELECTED_CHILD_STORAGE_KEY = "newro_selected_child_id";
 
 const AssessmentFlow = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
 
@@ -47,11 +52,57 @@ const AssessmentFlow = () => {
     if (currentIndex > 0) setCurrentIndex((i) => i - 1);
   };
 
-  const handleSubmit = () => {
+  const resolveSelectedChildId = async () => {
+    const selectedChildId = sessionStorage.getItem(SELECTED_CHILD_STORAGE_KEY);
+    if (selectedChildId) return selectedChildId;
+    if (!user) return null;
+
+    const { data } = await supabase
+      .from("children")
+      .select("id")
+      .eq("parent_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    return data?.[0]?.id ?? null;
+  };
+
+  const handleSubmit = async () => {
     const results = calculateResults(id!, answers);
     if (results) {
       // Store results in sessionStorage for the results page
       sessionStorage.setItem("newro_results", JSON.stringify(results));
+
+      if (user) {
+        try {
+          const childId = await resolveSelectedChildId();
+          if (childId) {
+            const { error } = await supabase.from("assessment_history").insert({
+              user_id: user.id,
+              child_id: childId,
+              assessment_type: results.assessmentId,
+              title: results.assessmentTitle,
+              summary: `${results.riskLabel} (${results.percentage}% concern level)`,
+              scores: {
+                totalScore: results.totalScore,
+                maxScore: results.maxScore,
+                percentage: results.percentage,
+                risk: results.risk,
+                riskLabel: results.riskLabel,
+                domainScores: results.domainScores,
+                recommendations: results.recommendations,
+                completedAt: results.completedAt,
+              },
+            });
+            if (error) {
+              console.warn("Unable to save assessment history:", error.message);
+            }
+          }
+        } catch (error) {
+          console.warn("Unable to save assessment history:", error);
+        }
+      }
+
       navigate(`/assessment/${id}/results`);
     }
   };
