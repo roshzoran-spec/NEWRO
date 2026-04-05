@@ -6,86 +6,86 @@ const features = [
     icon: Brain,
     title: "AI Development Screening",
     desc: "Upload video to automatically analyze autism indicators and developmental milestones with state-of-the-art precision.",
-    color: "from-primary to-teal-400",
-    shadow: "shadow-glow",
-    span: "col-span-1 md:col-span-2 lg:col-span-2",
+    color: "from-teal-400 to-cyan-500",
+    accent: "bg-teal-50 border-teal-100",
+    span: "lg:col-span-2",
   },
   {
     icon: Activity,
     title: "Smart Therapy Plans",
     desc: "AI-generated personalized speech and developmental therapy activities perfectly tailored for rapid growth.",
-    color: "from-ai-purple to-[#a78bfa]",
-    shadow: "shadow-glow-ai",
-    span: "col-span-1 md:col-span-1 lg:col-span-1",
+    color: "from-violet-400 to-purple-500",
+    accent: "bg-violet-50 border-violet-100",
+    span: "lg:col-span-1",
   },
   {
     icon: TrendingUp,
     title: "Milestone Tracker",
     desc: "Animated growth timeline with real-time tracking for every exciting step of your child's developmental journey.",
-    color: "from-[#34d399] to-[#6ee7b7]", 
-    shadow: "shadow-sm",
-    span: "col-span-1",
+    color: "from-emerald-400 to-green-500",
+    accent: "bg-emerald-50 border-emerald-100",
+    span: "lg:col-span-1",
   },
   {
     icon: FileText,
     title: "AI Clinical Reports",
     desc: "Instant, automatic professional diagnostic reports formatted beautifully for therapists, clinicians, and parents.",
-    color: "from-[#38bdf8] to-[#7dd3fc]",
-    shadow: "shadow-sm",
-    span: "col-span-1 md:col-span-2 lg:col-span-1",
+    color: "from-blue-500 to-indigo-600",
+    accent: "bg-blue-50 border-blue-100",
+    span: "lg:col-span-1",
   },
   {
     icon: Video,
     title: "Tele Consultation",
     desc: "Seamlessly book and attend high-quality video sessions with world-class pediatric therapists directly from the app.",
-    color: "from-[#fb923c] to-[#fdba74]",
-    shadow: "shadow-sm",
-    span: "col-span-1 md:col-span-2 lg:col-span-1",
+    color: "from-orange-400 to-amber-500",
+    accent: "bg-orange-50 border-orange-100",
+    span: "lg:col-span-1",
   },
 ];
 
 const FeaturesSection = () => {
   return (
-    <section id="features" className="py-32 relative overflow-hidden bg-background">
-      {/* Decorative Background Elements */}
-      <div className="absolute top-1/2 left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-accent/5 rounded-full blur-[120px] pointer-events-none" />
-
+    <section id="features" className="py-24 bg-white relative overflow-hidden">
       <div className="container mx-auto px-6 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-20"
+          className="text-center mb-16"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-sm font-bold mb-6 text-primary border border-primary/20 uppercase tracking-widest">
-             Next-Generation Ecosystem
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 text-sm font-bold mb-6 text-teal-600 border border-teal-100 uppercase tracking-widest">
+            Next-Generation Ecosystem
           </div>
-          <h2 className="font-display text-4xl sm:text-5xl lg:text-7xl font-black mb-6 tracking-tight text-foreground leading-tight">
-            Complete Pediatric <br className="hidden sm:block" />
+          <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl font-black mb-5 tracking-tight text-foreground leading-tight">
+            Complete Pediatric{" "}
             <span className="text-gradient-newro italic">Intelligence Platform</span>
           </h2>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-bold leading-relaxed">
-            Everything your child needs, from the first screening to comprehensive therapy sessions—powered by AI built for pediatric care.
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-medium leading-relaxed">
+            Everything your child needs, from first screening to comprehensive therapy—powered by AI built for pediatric care.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {features.map((f, i) => (
             <motion.div
               key={f.title}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 28 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.1, duration: 0.6, ease: "easeOut" }}
-              className={`group relative p-8 md:p-10 rounded-[3rem] glass-card border-none hover:bg-white/60 transition-all duration-500 hover:-translate-y-2 ${f.span}`}
+              transition={{ delay: i * 0.08, duration: 0.5, ease: "easeOut" }}
+              className={`group relative p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-lg hover:-translate-y-1.5 transition-all duration-400 cursor-default ${f.span}`}
             >
-              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-8 text-white shadow-glow-soft group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500`}>
-                <f.icon className="w-7 h-7" />
+              {/* Icon */}
+              <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-6 text-white group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-sm`}>
+                <f.icon className="w-6 h-6" />
               </div>
-              
-              <h3 className="font-display font-black text-2xl md:text-3xl mb-4 text-foreground tracking-tight">{f.title}</h3>
-              <p className="text-muted-foreground leading-relaxed font-bold text-lg">{f.desc}</p>
+
+              <h3 className="font-display font-black text-xl mb-3 text-foreground tracking-tight">{f.title}</h3>
+              <p className="text-muted-foreground leading-relaxed text-base">{f.desc}</p>
+
+              {/* Subtle hover accent line */}
+              <div className={`absolute bottom-0 left-8 right-8 h-0.5 bg-gradient-to-r ${f.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full`} />
             </motion.div>
           ))}
         </div>
@@ -93,6 +93,5 @@ const FeaturesSection = () => {
     </section>
   );
 };
-
 
 export default FeaturesSection;

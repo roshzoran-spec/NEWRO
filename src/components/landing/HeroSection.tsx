@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Brain, ChevronRight, Activity, MessageCircle, Users, Plus, Sparkles as SparklesIcon } from "lucide-react";
+import { Brain, ChevronDown, Activity, MessageCircle, Users, Plus, Sparkles as SparklesIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, ReferenceLine } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,7 +33,7 @@ const ChildCard = ({ name, age, data, delay = 0 }: { name: string; age: string; 
       initial={{ opacity: 0, y: 40, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 1, delay, ease: "easeOut" }}
-      className="relative w-full max-w-xl group mx-auto"
+      className="relative w-full max-w-3xl group mx-auto"
     >
       <div className="absolute inset-0 bg-primary/5 blur-[60px] rounded-full scale-75 group-hover:scale-90 transition-transform duration-1000" />
       
@@ -55,9 +55,9 @@ const ChildCard = ({ name, age, data, delay = 0 }: { name: string; age: string; 
           </div>
         </div>
 
-        <div className="h-[200px] w-full mb-8 relative">
+        <div className="h-[320px] w-full mb-8 relative">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+            <AreaChart data={data} margin={{ top: 24, right: 10, left: 10, bottom: 20 }}>
               <defs>
                 <linearGradient id={`colorMotor-${name}`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#10B981" stopOpacity={0.2}/>
@@ -195,7 +195,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-20 overflow-hidden bg-gradient-newro selection:bg-primary/30">
+    <section className="relative min-h-screen flex flex-col items-center justify-center pt-40 pb-10 overflow-hidden bg-gradient-newro selection:bg-primary/30">
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <motion.div 
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] rounded-full bg-gradient-to-tr from-primary/5 via-accent/5 to-transparent blur-[120px]"
@@ -237,18 +237,18 @@ const HeroSection = () => {
 
         <motion.p
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0.6 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.4 }}
-          className="text-lg md:text-xl font-medium text-muted-foreground mb-6 max-w-2xl px-4"
+          className="text-lg md:text-xl font-medium text-foreground/70 mb-6 max-w-2xl px-4"
         >
           Every milestone tells a story. The right insight changes everything.
         </motion.p>
 
         <motion.p
            initial={{ opacity: 0 }}
-           animate={{ opacity: 0.5 }}
+           animate={{ opacity: 1 }}
            transition={{ duration: 1, delay: 0.5 }}
-           className="text-base md:text-lg text-muted-foreground max-w-3xl mb-16 font-medium leading-relaxed px-4"
+           className="text-base md:text-lg text-foreground/55 max-w-3xl mb-10 font-medium leading-relaxed px-4"
         >
           Combine intelligent milestone tracking, clinical insights, and personalized therapy guidance into the world’s most advanced platform.
         </motion.p>
@@ -258,7 +258,7 @@ const HeroSection = () => {
             {user && children.length > 0 ? (
               <motion.div 
                 key="children-grid"
-                className={`flex flex-wrap justify-center gap-8 w-full ${children.length === 1 ? 'max-w-2xl' : 'max-w-6xl'}`}
+                className={`flex flex-wrap justify-center gap-8 w-full ${children.length === 1 ? 'max-w-3xl' : 'max-w-6xl'}`}
               >
                 {children.map((child, idx) => (
                   <ChildCard 
@@ -287,7 +287,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.8 }}
-          className="flex flex-wrap items-center justify-center gap-6 mt-20"
+          className="flex flex-wrap items-center justify-center gap-6 mt-12"
         >
           <Button asChild className="btn-pill h-14 px-10 text-lg bg-gradient-to-r from-[#6FE7DD] to-[#7AA7FF] text-foreground font-black shadow-glow-soft hover:scale-105 transition-all border-none">
             <Link to={user ? "/dashboard" : "/signup"}>
@@ -300,16 +300,24 @@ const HeroSection = () => {
           </Button>
         </motion.div>
         
-        {!user && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.4 }}
-            className="mt-8 text-xs font-bold uppercase tracking-widest text-muted-foreground"
-          >
-            Already a member? <Link to="/login" className="text-primary hover:underline">Sign In</Link>
-          </motion.div>
-        )}
       </div>
+
+      {/* Scroll indicator */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.5, duration: 0.6 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 cursor-pointer group"
+        onClick={() => window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' })}
+      >
+        <motion.div
+          animate={{ y: [0, 6, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          className="w-8 h-8 rounded-full bg-white/60 border border-white/80 shadow-sm flex items-center justify-center group-hover:bg-white/80 transition-colors"
+        >
+          <ChevronDown className="w-4 h-4 text-primary" />
+        </motion.div>
+      </motion.div>
     </section>
   );
 };

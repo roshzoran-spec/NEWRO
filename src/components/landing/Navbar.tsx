@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Brain, Menu, X, LayoutDashboard } from "lucide-react";
@@ -7,7 +7,14 @@ import { useAuth } from "@/hooks/useAuth";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { user } = useAuth();
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 60);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const links = [
     { label: "Screening", to: "/screening" },
@@ -18,8 +25,12 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="fixed top-6 left-0 right-0 z-50 px-4">
-      <div className="container mx-auto glass-nav h-16 rounded-full flex items-center justify-between px-6 border-white/60 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.08)] bg-white/60 backdrop-blur-xl">
+    <nav className={`fixed left-0 right-0 z-50 px-4 transition-all duration-500 ${scrolled ? 'top-3' : 'top-6'}`}>
+      <div className={`container mx-auto h-16 rounded-full flex items-center justify-between px-6 backdrop-blur-xl transition-all duration-500 ${
+        scrolled
+          ? 'bg-white/90 border border-white/80 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.12)]'
+          : 'bg-white/60 border border-white/60 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.06)]'
+      }`}>
         <Link to="/" className="flex items-center gap-3 group">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#AEEEEE] via-[#6FE7DD] to-[#7AA7FF] flex items-center justify-center shadow-glow-soft group-hover:rotate-12 transition-all duration-500">
             <Brain className="w-6 h-6 text-white" />
