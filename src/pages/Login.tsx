@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +13,19 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [resetCooldown, setResetCooldown] = useState(0);
   const { signIn, resetPassword } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const resetSuccess = useMemo(() => searchParams.get("reset") === "success", [searchParams]);
+
+  useEffect(() => {
+    if (resetCooldown <= 0) return;
+    const timer = window.setTimeout(() => {
+      setResetCooldown((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [resetCooldown]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,21 +62,41 @@ const Login = () => {
   };
 
   const handleForgotPassword = async () => {
-    if (!email) {
+    if (resetCooldown > 0) {
+      toast.error(`Please wait ${resetCooldown}s before requesting another reset email.`);
+      return;
+    }
+
+    const normalizedEmail = email.trim();
+
+    if (!normalizedEmail) {
       toast.error("Enter your email first so we know where to send the reset link.");
       return;
     }
 
     setResetting(true);
-    const { error } = await resetPassword(email);
-    setResetting(false);
+    try {
+      const { error } = await resetPassword(normalizedEmail);
 
-    if (error) {
-      toast.error(error.message);
-      return;
+      if (error) {
+        if (error.message.toLowerCase().includes("rate limit")) {
+          setResetCooldown(60);
+          toast.error("Email rate limit reached. Please wait 60 seconds and try again.");
+          return;
+        }
+        toast.error(error.message);
+        return;
+      }
+
+      setResetCooldown(45);
+      toast.success("Password reset link sent. Check your email.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to send reset email right now. Please try again.";
+      toast.error(message);
+    } finally {
+      setResetting(false);
     }
-
-    toast.success("Password reset link sent. Check your email.");
   };
 
   return (
@@ -113,10 +142,14 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={handleForgotPassword}
-                  disabled={resetting}
+                  disabled={resetting || resetCooldown > 0}
                   className="text-xs font-medium text-primary hover:underline disabled:opacity-60"
                 >
-                  {resetting ? "Sending..." : "Forgot password?"}
+                  {resetting
+                    ? "Sending..."
+                    : resetCooldown > 0
+                    ? `Retry in ${resetCooldown}s`
+                    : "Forgot password?"}
                 </button>
               </div>
               <Input

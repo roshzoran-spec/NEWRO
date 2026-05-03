@@ -163,9 +163,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
-    const redirectTo = `${window.location.origin}/reset-password`;
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-    return { error };
+    const configuredRedirect = import.meta.env.VITE_PASSWORD_RESET_REDIRECT_URL as string | undefined;
+    const redirectTo = configuredRedirect?.trim() || `${window.location.origin}/reset-password`;
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+      if (error && error.message.toLowerCase().includes("failed to fetch")) {
+        return {
+          error: new Error(
+            "Unable to reach authentication service. Please check your internet/VPN and try again."
+          ),
+        };
+      }
+      return { error };
+    } catch (error) {
+      if (error instanceof Error && error.message.toLowerCase().includes("failed to fetch")) {
+        return {
+          error: new Error(
+            "Unable to reach authentication service. Please check your internet/VPN and try again."
+          ),
+        };
+      }
+
+      return {
+        error: error instanceof Error ? error : new Error("Unable to send reset email. Please try again."),
+      };
+    }
   };
 
   const updatePassword = async (password: string) => {

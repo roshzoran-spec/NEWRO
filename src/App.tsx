@@ -2,8 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
+import { useEffect } from "react";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -32,11 +33,43 @@ import Consultation from "./pages/Consultation";
 
 const queryClient = new QueryClient();
 
+const RecoveryRedirect = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (location.pathname === "/reset-password") return;
+
+    const searchParams = new URLSearchParams(location.search);
+    const hashParams = new URLSearchParams(location.hash.replace(/^#/, ""));
+
+    const recoveryType =
+      searchParams.get("type") === "recovery" || hashParams.get("type") === "recovery";
+    const hasRecoveryTokens =
+      Boolean(searchParams.get("token_hash")) ||
+      (Boolean(hashParams.get("access_token")) && Boolean(hashParams.get("refresh_token")));
+
+    if (!recoveryType && !hasRecoveryTokens) return;
+
+    navigate(
+      {
+        pathname: "/reset-password",
+        search: location.search,
+        hash: location.hash,
+      },
+      { replace: true }
+    );
+  }, [location.hash, location.pathname, location.search, navigate]);
+
+  return null;
+};
+
 const AnimatedRoutes = () => {
   const location = useLocation();
   
   return (
     <AnimatePresence mode="wait">
+      <RecoveryRedirect />
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Index />} />
         <Route path="/login" element={<Login />} />
