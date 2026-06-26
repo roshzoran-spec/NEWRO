@@ -1,35 +1,80 @@
 import { motion } from "framer-motion";
-import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { Brain, Activity, MessageCircle, Users } from "lucide-react";
+import { 
+  ComposedChart, 
+  Area, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  ResponsiveContainer, 
+  ReferenceLine, 
+  ReferenceDot,
+  Label,
+  CartesianGrid
+} from "recharts";
+import { Brain, Activity, MessageCircle, Users, Lightbulb } from "lucide-react";
 import { useState } from "react";
 
-const domainData: Record<string, { name: string; score: number; zone: string }[]> = {
+// Generate curved reference bands approximating neurotypical progression
+const generateBands = (age: number) => {
+  // Expected median line across ages 0-6 years
+  const expected = age === 0 ? 25 : age === 1 ? 40 : age === 2 ? 60 : age === 3 ? 75 : age === 4 ? 85 : age === 5 ? 95 : 100;
+  return {
+    // Green (Normal range: 25th-75th percentile)
+    rangeGreen: [Math.max(0, expected - 15), 100],
+    // Yellow (Watch zone: 10th-25th percentile)
+    rangeYellow: [Math.max(0, expected - 30), Math.max(0, expected - 15)],
+    // Red (Delay zone: <10th percentile)
+    rangeRed: [0, Math.max(0, expected - 30)]
+  };
+};
+
+const domainData: Record<string, any[]> = {
   language: [
-    { name: "0", score: 12, zone: "green" },
-    { name: "1", score: 28, zone: "green" },
-    { name: "2", score: 42, zone: "green" },
-    { name: "3", score: 48, zone: "yellow" },
-    { name: "4", score: 68, zone: "green" },
-    { name: "5", score: 82, zone: "green" },
-    { name: "6", score: 91, zone: "green" },
+    { name: "0", age: 0, score: 20, ...generateBands(0) },
+    { name: "1", age: 1, score: 38, ...generateBands(1) },
+    { name: "2", age: 2, score: 55, ...generateBands(2) },
+    { 
+      name: "3", age: 3, score: 48, ...generateBands(3), 
+      isWarning: true, 
+      annotation: "⚠️ Mild expressive delay detected at 36 months",
+      annoColor: "text-amber-800", annoBg: "bg-amber-100 border-amber-300"
+    },
+    { name: "4", age: 4, score: 62, ...generateBands(4) },
+    { name: "5", age: 5, score: 85, ...generateBands(5) },
+    { name: "6", age: 6, score: 95, ...generateBands(6) },
   ],
   motor: [
-    { name: "0", score: 15, zone: "green" },
-    { name: "1", score: 38, zone: "green" },
-    { name: "2", score: 62, zone: "green" },
-    { name: "3", score: 75, zone: "green" },
-    { name: "4", score: 86, zone: "green" },
-    { name: "5", score: 93, zone: "green" },
-    { name: "6", score: 97, zone: "green" },
+    { name: "0", age: 0, score: 24, ...generateBands(0) },
+    { name: "1", age: 1, score: 42, ...generateBands(1) },
+    { name: "2", age: 2, score: 63, ...generateBands(2) },
+    { name: "3", age: 3, score: 76, ...generateBands(3) },
+    { name: "4", age: 4, score: 88, ...generateBands(4) },
+    { name: "5", age: 5, score: 98, ...generateBands(5) },
+    { name: "6", age: 6, score: 100, ...generateBands(6) },
   ],
   social: [
-    { name: "0", score: 10, zone: "green" },
-    { name: "1", score: 24, zone: "green" },
-    { name: "2", score: 40, zone: "green" },
-    { name: "3", score: 58, zone: "green" },
-    { name: "4", score: 70, zone: "green" },
-    { name: "5", score: 80, zone: "green" },
-    { name: "6", score: 88, zone: "green" },
+    { name: "0", age: 0, score: 18, ...generateBands(0) },
+    { name: "1", age: 1, score: 35, ...generateBands(1) },
+    { name: "2", age: 2, score: 45, ...generateBands(2) },
+    { name: "3", age: 3, score: 50, ...generateBands(3) },
+    { 
+      name: "4", age: 4, score: 35, ...generateBands(4), 
+      isAlert: true,
+      annotation: "🚨 Significant delay – clinical attention recommended",
+      annoColor: "text-red-700", annoBg: "bg-red-50 border-red-300"
+    },
+    { name: "5", age: 5, score: 48, ...generateBands(5) },
+    { name: "6", age: 6, score: 65, ...generateBands(6) },
+  ],
+  cognitive: [
+    { name: "0", age: 0, score: 26, ...generateBands(0) },
+    { name: "1", age: 1, score: 45, ...generateBands(1) },
+    { name: "2", age: 2, score: 65, ...generateBands(2) },
+    { name: "3", age: 3, score: 78, ...generateBands(3) },
+    { name: "4", age: 4, score: 92, ...generateBands(4) },
+    { name: "5", age: 5, score: 98, ...generateBands(5) },
+    { name: "6", age: 6, score: 100, ...generateBands(6) },
   ],
 };
 
@@ -38,51 +83,101 @@ const domains = [
     key: "language",
     label: "Language",
     icon: MessageCircle,
-    color: "#3B82F6",
-    gradientFrom: "#3B82F6",
+    color: "#3B82F6", // bright blue line for the child curve
     pill: "bg-blue-500",
     light: "bg-blue-50",
     text: "text-blue-600",
     border: "border-blue-200",
-    ring: "ring-blue-500",
-    delay: "3",
-    insight: "Slight delay in expressive language at 36 months. Early stimulation recommended.",
-    status: "Monitor",
-    statusColor: "text-amber-600 bg-amber-50 border-amber-200",
+    insight: "Expressive language shows a slight dip against the median trend line.",
+    status: "Watch Zone",
+    statusColor: "text-amber-700 bg-amber-50 border-amber-200",
   },
   {
     key: "motor",
     label: "Motor",
     icon: Activity,
-    color: "#10B981",
-    gradientFrom: "#10B981",
+    color: "#3B82F6",
     pill: "bg-emerald-500",
     light: "bg-emerald-50",
-    text: "text-emerald-600",
+    text: "text-emerald-700",
     border: "border-emerald-200",
-    ring: "ring-emerald-500",
-    delay: null,
-    insight: "Motor development is on track across all age ranges. Keep up the active play!",
+    insight: "Motor development is firmly in the green zone across all age ranges.",
     status: "On Track",
-    statusColor: "text-emerald-600 bg-emerald-50 border-emerald-200",
+    statusColor: "text-emerald-700 bg-emerald-50 border-emerald-200",
   },
   {
     key: "social",
     label: "Social",
     icon: Users,
-    color: "#8B5CF6",
-    gradientFrom: "#8B5CF6",
+    color: "#3B82F6",
     pill: "bg-violet-500",
     light: "bg-violet-50",
-    text: "text-violet-600",
+    text: "text-violet-700",
     border: "border-violet-200",
-    ring: "ring-violet-500",
-    delay: null,
-    insight: "Social engagement is progressing well. Peer play activities are showing results.",
-    status: "On Track",
-    statusColor: "text-emerald-600 bg-emerald-50 border-emerald-200",
+    insight: "Social engagement has dropped into the critical red zone needing intervention.",
+    status: "Needs Attention",
+    statusColor: "text-red-700 bg-red-50 border-red-200",
+  },
+  {
+    key: "cognitive",
+    label: "Cognitive",
+    icon: Lightbulb,
+    color: "#3B82F6",
+    pill: "bg-amber-500",
+    light: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border-amber-200",
+    insight: "Cognitive skills tracking well into the advanced percentiles for problem-solving.",
+    status: "Advanced",
+    statusColor: "text-purple-700 bg-purple-50 border-purple-200",
   },
 ];
+
+const CustomLineDot = (props: any) => {
+  const { cx, cy, payload, stroke } = props;
+  
+  // Entering Red Zone
+  if (payload.isAlert) {
+    return (
+      <g transform={`translate(${cx},${cy})`}>
+        <circle r="14" fill="#EF4444" className="animate-ping opacity-60" />
+        <circle r="8" fill="#EF4444" stroke="#fff" strokeWidth={2.5} className="shadow-lg" />
+      </g>
+    );
+  }
+  
+  // Entering Yellow Zone
+  if (payload.isWarning) {
+    return (
+      <g transform={`translate(${cx},${cy})`}>
+        <circle r="8" fill="#F59E0B" stroke="#fff" strokeWidth={2.5} className="shadow-md" />
+      </g>
+    );
+  }
+
+  // Normal progression
+  return (
+    <circle cx={cx} cy={cy} r={5} fill={stroke} stroke="#fff" strokeWidth={2.5} className="shadow-sm drop-shadow-md" />
+  );
+};
+
+const AnnotationBubble = (props: any) => {
+  const { viewBox, payload } = props;
+  if (!viewBox) return null;
+  
+  // Determine if it should render above or below based on space
+  const yOffset = payload.isAlert ? 25 : -85;
+  
+  return (
+    <svg x={viewBox.x - 120} y={viewBox.y + yOffset} className="overflow-visible">
+      <foreignObject width="240" height="70">
+        <div className={`p-2.5 rounded-xl border-2 shadow-xl flex items-center justify-center text-xs font-bold leading-tight text-center ${payload.annoBg} ${payload.annoColor} animate-in fade-in zoom-in slide-in-from-bottom-2 duration-500`}>
+          {payload.annotation}
+        </div>
+      </foreignObject>
+    </svg>
+  );
+};
 
 const MilestoneTrackerPreview = () => {
   const [activeDomain, setActiveDomain] = useState(0);
@@ -90,30 +185,10 @@ const MilestoneTrackerPreview = () => {
   const data = domainData[domain.key];
 
   return (
-    <section className="py-16 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #f0fffe 0%, #eef2ff 50%, #fdf4ff 100%)" }}>
-      <div className="container mx-auto px-4 relative z-10">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-black tracking-widest text-slate-500 uppercase mb-4 shadow-sm">
-              Live AI Analysis
-            </div>
-            <h2 className="text-4xl md:text-5xl font-black text-foreground mb-2">
-              Track Development —{" "}
-              <span className="text-gradient-newro">Instantly</span>
-            </h2>
-            <p className="text-sm font-medium text-muted-foreground/70">
-              Click a domain to explore your child's developmental trajectory
-            </p>
-          </motion.div>
-        </div>
+    <div className="w-full relative z-10 perspective-1000">
 
         {/* Domain Tabs */}
-        <div className="flex justify-center gap-3 mb-8">
+        <div className="flex flex-wrap justify-center gap-3 mb-8">
           {domains.map((d, i) => {
             const Icon = d.icon;
             const isActive = activeDomain === i;
@@ -125,10 +200,10 @@ const MilestoneTrackerPreview = () => {
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 border ${
                   isActive
                     ? `text-white shadow-md ${d.pill} border-transparent`
-                    : `bg-white ${d.text} ${d.border} hover:shadow-sm`
+                    : `bg-white text-slate-600 border-slate-200 hover:shadow-sm hover:border-slate-300 hover:text-slate-900`
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className="w-4 h-4" />
                 {d.label}
               </motion.button>
             );
@@ -136,86 +211,193 @@ const MilestoneTrackerPreview = () => {
         </div>
 
         {/* Main Grid */}
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           {/* Chart Card */}
           <motion.div
             key={activeDomain}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="rounded-3xl p-6 md:p-8 bg-white border border-slate-100 shadow-lg"
+            transition={{ duration: 0.4 }}
+            className="rounded-[2.5rem] p-6 md:p-10 bg-white border border-slate-100 shadow-xl relative overflow-visible"
           >
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
               <div>
-                <h3 className="text-lg font-black text-foreground">{domain.label} Development</h3>
-                <p className="text-xs text-muted-foreground font-medium">Predictive AI · Age 0–6 years</p>
+                <h3 className="text-2xl font-black text-foreground flex items-center gap-2">
+                  <domain.icon className={`w-6 h-6 ${domain.text}`} />
+                  {domain.label} Trajectory
+                </h3>
+                <p className="text-sm text-slate-500 font-semibold mt-1">Percentile bands based on standardized pediatric milestones.</p>
               </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold border ${domain.statusColor}`}>
-                {domain.status}
+              <span className={`px-4 py-1.5 rounded-full text-sm font-black border ${domain.statusColor} shadow-sm shrink-0 whitespace-nowrap`}>
+                Status: {domain.status}
               </span>
             </div>
 
-            <div className="h-[240px] w-full">
+            <div className="h-[380px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 28 }}>
+                <ComposedChart data={data} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                   <defs>
-                    <linearGradient id={`grad-${domain.key}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={domain.color} stopOpacity={0.25} />
-                      <stop offset="95%" stopColor={domain.color} stopOpacity={0} />
-                    </linearGradient>
+                    <filter id="glow-line" x="-10%" y="-10%" width="120%" height="120%">
+                      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                      <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
                   </defs>
+
+                  <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#E2E8F0" />
+                  
                   <Tooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const isWarning = payload[0].payload.zone === "yellow";
-                        return (
-                          <div className="bg-white p-3 rounded-2xl shadow-xl border border-slate-100">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">Age {payload[0].payload.name} yrs</p>
-                            <p className="text-base font-black" style={{ color: domain.color }}>
-                              {payload[0].value}%
-                            </p>
-                            {isWarning && <p className="text-[10px] font-bold text-amber-600 mt-1">⚠ Below expected range</p>}
-                          </div>
-                        );
-                      }
-                      return null;
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)', fontWeight: 700 }}
+                    itemStyle={{ color: '#0F172A' }}
+                    formatter={(value: number, name: string) => {
+                      if (name === "Child's Curve") return [`${value} Score`, name];
+                      return [null, null];
+                    }}
+                    labelFormatter={(label) => `Age ${label} years`}
+                  />
+
+                  {/* Y-Axis with Sub-labels identifying the Zones contextually */}
+                  <YAxis 
+                    domain={[0, 100]} 
+                    axisLine={false} 
+                    tickLine={false} 
+                    ticks={[10, 50, 90]} 
+                    width={100}
+                    tick={({ x, y, payload }: any) => {
+                      const texts: Record<number, string> = { 10: "Delayed (<10th)", 50: "Typical (25th-75th)", 90: "Advanced" };
+                      const colors: Record<number, string> = { 10: "#EF4444", 50: "#10B981", 90: "#3B82F6" };
+                      return (
+                        <text x={x} y={y} fill={colors[payload.value] || "#94A3B8"} fontSize={11} fontWeight={800} textAnchor="end" dy={4}>
+                          {texts[payload.value]}
+                        </text>
+                      );
                     }}
                   />
+                  
                   <XAxis
                     dataKey="name"
-                    axisLine={false}
+                    axisLine={{ stroke: "#CBD5E1", strokeWidth: 2 }}
                     tickLine={false}
-                    tick={{ fill: "#94A3B8", fontWeight: 600, fontSize: 11 }}
-                    label={{ value: "Age (Years)", position: "insideBottom", offset: -8, fill: "#94A3B8", fontWeight: 700, fontSize: 10 }}
+                    tick={{ fill: "#64748B", fontWeight: 700, fontSize: 12 }}
+                    dy={12}
+                    label={{ value: "Child's Age (Years)", position: "bottom", offset: -5, fill: "#475569", fontWeight: 800, fontSize: 13 }}
                   />
+
+                  {/* Reference Band 1: Red Zone (Delay) */}
                   <Area
                     type="monotone"
-                    dataKey="score"
-                    stroke={domain.color}
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill={`url(#grad-${domain.key})`}
-                    animationDuration={600}
+                    dataKey="rangeRed"
+                    stroke="none"
+                    fill="#FEE2E2" // Tailwinds red-100
+                    fillOpacity={0.6}
+                    isAnimationActive={true}
+                    name="Delay Zone"
+                    activeDot={false}
                   />
-                  {domain.delay && (
-                    <ReferenceLine x={domain.delay} stroke="#F59E0B" strokeDasharray="4 4" strokeWidth={2} />
-                  )}
-                </AreaChart>
+
+                  {/* Reference Band 2: Yellow Zone (Borderline/Watch) */}
+                  <Area
+                    type="monotone"
+                    dataKey="rangeYellow"
+                    stroke="none"
+                    fill="#FEF3C7" // Tailwinds amber-100
+                    fillOpacity={0.6}
+                    isAnimationActive={true}
+                    name="Watch Zone"
+                    activeDot={false}
+                  />
+
+                  {/* Reference Band 3: Green Zone (Normal Range) */}
+                  <Area
+                    type="monotone"
+                    dataKey="rangeGreen"
+                    stroke="none"
+                    fill="#D1FAE5" // Tailwinds emerald-100
+                    fillOpacity={0.5}
+                    isAnimationActive={true}
+                    name="Normal Range"
+                    activeDot={false}
+                  />
+
+                  {/* Child's Development Curve */}
+                  <Line
+                    type="monotone"
+                    dataKey="score"
+                    name="Child's Curve"
+                    stroke={domain.color}
+                    strokeWidth={4.5}
+                    dot={<CustomLineDot />}
+                    activeDot={{ r: 7, stroke: "#fff", strokeWidth: 2 }}
+                    style={{ filter: "url(#glow-line)" }}
+                    animationDuration={1500}
+                  />
+
+                  {/* Conditional Elements mapping for Smart Markers */}
+                  {data.map((d) => {
+                    if (d.isAlert || d.isWarning) {
+                      return (
+                        <ReferenceLine 
+                          key={`ref-line-${d.name}`} 
+                          x={d.name} 
+                          stroke={d.isAlert ? "#EF4444" : "#F59E0B"} 
+                          strokeDasharray="4 4" 
+                          strokeWidth={2} 
+                        />
+                      );
+                    }
+                    return null;
+                  })}
+                  
+                  {data.map((d) => {
+                    if (d.isAlert || d.isWarning) {
+                      return (
+                        <ReferenceDot 
+                          key={`ref-dot-${d.name}`} 
+                          x={d.name} 
+                          y={d.score} 
+                          r={0} 
+                          isFront 
+                          label={<AnnotationBubble payload={d} />} 
+                        />
+                      );
+                    }
+                    return null;
+                  })}
+
+                  {/* Current Age Marker */}
+                  <ReferenceLine x="3" stroke="#64748B" strokeDasharray="3 3" strokeWidth={2}>
+                    <Label 
+                      position="insideTopLeft" 
+                      fill="#334155" 
+                      fontSize={12} 
+                      fontWeight={800}
+                      offset={10}
+                      className="bg-white/80 px-2 py-1 rounded"
+                    >
+                      Current Age: 3 years
+                    </Label>
+                  </ReferenceLine>
+
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
 
             {/* AI Insight */}
-            <div className={`mt-4 p-4 rounded-2xl border ${domain.light} ${domain.border} flex items-start gap-3`}>
-              <div className="p-1.5 rounded-lg bg-white shadow-sm shrink-0">
-                <Brain className="w-4 h-4" style={{ color: domain.color }} />
+            <div className={`mt-8 p-5 rounded-2xl border ${domain.light} ${domain.border} flex items-start gap-4 shadow-sm`}>
+              <div className="p-2 rounded-xl bg-white shadow-sm shrink-0">
+                <Brain className="w-5 h-5 flex-shrink-0" style={{ color: domain.color }} />
               </div>
-              <p className="text-xs font-medium text-foreground/80 leading-relaxed">{domain.insight}</p>
+              <div className="flex flex-col">
+                <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider mb-1">Clinical Insight</span>
+                <p className="text-sm font-bold text-foreground/80 leading-relaxed">{domain.insight}</p>
+              </div>
             </div>
+            
           </motion.div>
-
         </div>
-      </div>
-    </section>
+    </div>
   );
 };
 

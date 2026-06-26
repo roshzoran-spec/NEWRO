@@ -32,10 +32,9 @@ const Navbar = () => {
           : 'bg-white/60 border border-white/60 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.06)]'
       }`}>
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#AEEEEE] via-[#6FE7DD] to-[#7AA7FF] flex items-center justify-center shadow-glow-soft group-hover:rotate-12 transition-all duration-500">
-            <Brain className="w-6 h-6 text-white" />
+          <div className="h-12 w-auto group-hover:rotate-2 group-hover:scale-105 transition-all duration-500 drop-shadow-md overflow-hidden bg-transparent">
+            <img src="/logo.png" alt="Newro" className="h-full w-auto object-contain mix-blend-darken" />
           </div>
-          <span className="font-display font-black text-2xl tracking-tighter text-foreground decoration-[#6FE7DD]/40 underline-offset-4 group-hover:underline">NEWRO</span>
         </Link>
 
         {/* Desktop Links */}

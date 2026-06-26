@@ -108,11 +108,10 @@ const Login = () => {
       >
         <div className="bg-card rounded-2xl border border-border p-8 shadow-lg">
           <div className="text-center mb-8">
-            <Link to="/" className="inline-flex items-center gap-2 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-gradient-cta flex items-center justify-center">
-                <Brain className="w-5 h-5 text-primary-foreground" />
+            <Link to="/" className="inline-flex items-center justify-center gap-2 mb-6 hover:scale-105 transition-transform duration-300">
+              <div className="h-20 w-auto drop-shadow-md">
+                <img src="/logo.png" alt="Newro" className="h-full w-auto object-contain mix-blend-darken" />
               </div>
-              <span className="font-display font-bold text-2xl text-foreground">Newro</span>
             </Link>
             <h1 className="font-display text-2xl font-bold text-card-foreground">Welcome back</h1>
             <p className="text-sm text-muted-foreground mt-1">Sign in to your account</p>

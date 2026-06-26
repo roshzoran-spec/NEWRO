@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Brain, ChevronDown, Activity, MessageCircle, Users, Plus, Sparkles as SparklesIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, ReferenceLine } from "recharts";
+import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import MilestoneTrackerPreview from "@/components/landing/MilestoneTrackerPreview";
 
 const aaravData = [
   { age: 1.0, motor: 20, language: 15, social: 18 },
@@ -25,7 +26,7 @@ const generateMockData = (baseSeed: number) => {
   ];
 };
 
-const ChildCard = ({ name, age, data, delay = 0 }: { name: string; age: string; data: any[]; delay?: number }) => {
+const ChildCard = ({ age, data, delay = 0 }: { age: string; data: any[]; delay?: number }) => {
   const currentAgeNum = parseFloat(age.split(' ')[0]);
 
   return (
@@ -40,11 +41,10 @@ const ChildCard = ({ name, age, data, delay = 0 }: { name: string; age: string; 
       <div className="glass-card rounded-[2.5rem] p-8 md:p-10 border-white/60 shadow-2xl animate-float relative z-10">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary font-bold text-lg">
-              👶
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary font-bold text-2xl">
+              👶🏽
             </div>
             <div className="text-left">
-              <h3 className="text-xl font-black text-foreground">{name}</h3>
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{age}</p>
             </div>
           </div>
@@ -57,21 +57,39 @@ const ChildCard = ({ name, age, data, delay = 0 }: { name: string; age: string; 
 
         <div className="h-[320px] w-full mb-8 relative">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 24, right: 10, left: 10, bottom: 20 }}>
+            <AreaChart data={data} margin={{ top: 24, right: 30, left: 20, bottom: 20 }}>
               <defs>
-                <linearGradient id={`colorMotor-${name}`} x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id={`colorMotor-demo`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#10B981" stopOpacity={0.2}/>
                   <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
                 </linearGradient>
-                <linearGradient id={`colorLang-${name}`} x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id={`colorLang-demo`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.2}/>
                   <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
                 </linearGradient>
-                <linearGradient id={`colorSocial-${name}`} x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id={`colorSocial-demo`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.2}/>
                   <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
                 </linearGradient>
               </defs>
+              
+              <YAxis 
+                domain={[0, 100]} 
+                axisLine={false} 
+                tickLine={false} 
+                ticks={[20, 60, 90]} 
+                width={70}
+                tick={({ x, y, payload }: any) => {
+                  const texts: Record<number, string> = { 20: "Delayed", 60: "Typical", 90: "Advanced" };
+                  const colors: Record<number, string> = { 20: "#EF4444", 60: "#10B981", 90: "#3B82F6" };
+                  return (
+                    <text x={x} y={y} fill={colors[payload.value] || "#94A3B8"} fontSize={10} fontWeight={800} textAnchor="end" dy={4}>
+                      {texts[payload.value]}
+                    </text>
+                  );
+                }}
+              />
+
               <XAxis 
                 dataKey="age" 
                 type="number" 
@@ -88,7 +106,7 @@ const ChildCard = ({ name, age, data, delay = 0 }: { name: string; age: string; 
                     return (
                       <div className="glass-card p-3 rounded-xl border-none shadow-2xl backdrop-blur-2xl">
                         <p className="text-[9px] font-black text-muted-foreground uppercase mb-1">Age {payload[0].payload.age}</p>
-                        {payload.map((entry) => (
+                        {payload.map((entry: any) => (
                           <div key={entry.name} className="flex items-center justify-between gap-3 mb-0.5">
                             <span className="text-[8px] font-bold text-muted-foreground uppercase">{entry.name}</span>
                             <span className="text-[10px] font-black" style={{ color: entry.color }}>{entry.value}%</span>
@@ -100,9 +118,9 @@ const ChildCard = ({ name, age, data, delay = 0 }: { name: string; age: string; 
                   return null;
                 }}
               />
-              <Area animationDuration={2000} type="monotone" dataKey="motor" stroke="#10B981" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorMotor-${name})`} name="Motor" />
-              <Area animationDuration={2500} type="monotone" dataKey="language" stroke="#3B82F6" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorLang-${name})`} name="Language" />
-              <Area animationDuration={3000} type="monotone" dataKey="social" stroke="#8B5CF6" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorSocial-${name})`} name="Social" />
+              <Area animationDuration={2000} type="monotone" dataKey="motor" stroke="#10B981" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorMotor-demo)`} name="Motor" />
+              <Area animationDuration={2500} type="monotone" dataKey="language" stroke="#3B82F6" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorLang-demo)`} name="Language" />
+              <Area animationDuration={3000} type="monotone" dataKey="social" stroke="#8B5CF6" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorSocial-demo)`} name="Social" />
               
               {/* Reference line for child's current age */}
               <ReferenceLine 
@@ -125,7 +143,7 @@ const ChildCard = ({ name, age, data, delay = 0 }: { name: string; age: string; 
         <div className="p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-2xl border border-white/40 flex items-center gap-3">
           <SparklesIcon className="w-4 h-4 text-primary" />
           <p className="text-xs font-bold text-foreground/80 text-left leading-tight">
-            "{name} shows consistent progress in motor skills. Early language stimulation suggested."
+            "Your child shows consistent progress in motor skills. Early language stimulation suggested."
           </p>
         </div>
       </div>
@@ -263,7 +281,6 @@ const HeroSection = () => {
                 {children.map((child, idx) => (
                   <ChildCard 
                     key={child.id}
-                    name={child.name} 
                     age={calculateAge(child.date_of_birth)} 
                     data={generateMockData(idx * 5)}
                     delay={0.6 + (idx * 0.2)}
@@ -271,13 +288,21 @@ const HeroSection = () => {
                 ))}
               </motion.div>
             ) : (
-              <motion.div key="demo-card" className="w-full flex justify-center">
-                <ChildCard 
-                  name="Aarav" 
-                  age="2.4 YEARS" 
-                  data={aaravData} 
-                  delay={0.6}
-                />
+              <motion.div 
+                key="demo-card" 
+                className="w-full max-w-5xl flex justify-center mx-auto relative perspective"
+                initial={{ opacity: 0, rotateX: 10, y: 40, scale: 0.95 }}
+                animate={{ opacity: 1, rotateX: 0, y: 0, scale: 1 }}
+                transition={{ duration: 1, delay: 0.6, ease: "easeOut" }}
+                style={{ perspective: "1000px" }}
+              >
+                <div className="w-full relative shadow-[0_20px_60px_-15px_rgba(111,231,221,0.3)] rounded-[2.5rem] overflow-hidden glass-card p-4 md:p-8 transform-gpu transition-all duration-700 border border-white/40">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-[#6FE7DD]/10 via-white/5 to-[#7AA7FF]/10 backdrop-blur-3xl -z-10" />
+                  
+                  <div className="w-full bg-white/70 backdrop-blur-xl rounded-[2rem] p-4 md:p-8 border border-white/50 shadow-inner">
+                    <MilestoneTrackerPreview />
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

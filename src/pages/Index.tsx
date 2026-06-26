@@ -13,7 +13,6 @@ const Index = () => {
       <div className="min-h-screen bg-background selection:bg-primary/20">
         <Navbar />
         <HeroSection />
-        <MilestoneTrackerPreview />
         <FeaturesSection />
         <CTASection />
         <Footer />
