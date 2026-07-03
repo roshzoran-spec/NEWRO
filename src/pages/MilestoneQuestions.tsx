@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { PageTransition } from "@/components/PageTransition";
 import { getQuestionsForAge, Milestone } from "@/utils/milestoneData";
+import { saveMilestoneAnswers } from "@/hooks/useMilestoneScores";
 
 const DOMAIN_META: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
   speech:    { label: "Speech & Language", icon: MessageCircle, color: "text-blue-500",    bg: "bg-blue-500"    },
@@ -25,6 +26,7 @@ const MilestoneQuestions = () => {
   // Expect age in months passed via navigation state
   const ageMonths: number = (location.state as any)?.ageMonths ?? 24;
   const childName: string = (location.state as any)?.childName ?? "Your Child";
+  const childId: string = (location.state as any)?.childId ?? "";
 
   const questions = getQuestionsForAge(ageMonths);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -50,8 +52,10 @@ const MilestoneQuestions = () => {
       setCurrentIndex((prev) => prev + 1);
     } else {
       setAnalyzing(true);
+      // Persist answers to localStorage so Dashboard and Milestones page can read them
+      if (childId) saveMilestoneAnswers(childId, newAnswers);
       setTimeout(() => {
-        navigate("/milestones", { state: { answers: newAnswers, ageMonths, childName } });
+        navigate("/milestones", { state: { answers: newAnswers, ageMonths, childName, childId } });
       }, 1800);
     }
   };

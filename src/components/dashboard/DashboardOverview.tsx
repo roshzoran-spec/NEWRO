@@ -35,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { LogoWatermark } from "@/components/ui/LogoWatermark";
+import { useMilestoneScores } from "@/hooks/useMilestoneScores";
 
 interface Child {
   id: string;
@@ -155,6 +156,19 @@ const DashboardOverview = ({ child, parentName, assessments = [] }: DashboardOve
   const diffMonths =
     (now.getFullYear() - dob.getFullYear()) * 12 + (now.getMonth() - dob.getMonth());
 
+  // Real milestone scores from localStorage – updated whenever parent completes quiz
+  const domainScores = useMilestoneScores(child.id, diffMonths);
+  const motorScore  = domainScores.find(d => d.domain === "motor");
+  const speechScore = domainScores.find(d => d.domain === "speech");
+  const socialScore = domainScores.find(d => d.domain === "social");
+  const cogScore    = domainScores.find(d => d.domain === "cognitive");
+
+  /** Map a status → colour name used by StatusCard */
+  const statusColor = (status: string | undefined) =>
+    status === "Needs Attention" ? "red" :
+    status === "Monitor"         ? "yellow" :
+    status === "Advanced"        ? "blue" : "green";
+
   const graphData = useMemo(() => generateHistoricalData(diffMonths), [diffMonths]);
 
   const yAxisTick = ({ x, y, payload }: any) => {
@@ -227,10 +241,10 @@ const DashboardOverview = ({ child, parentName, assessments = [] }: DashboardOve
 
           {/* Domain Status Cards */}
           <div className="grid grid-cols-2 gap-3">
-            <StatusCard domain="Motor"    score={88} status="On Track" color="green"  icon={Activity}       delay={0.1} />
-            <StatusCard domain="Language" score={62} status="Monitor"  color="yellow" icon={MessageCircle}  delay={0.2} />
-            <StatusCard domain="Social"   score={94} status="Advanced" color="blue"   icon={Users}          delay={0.3} />
-            <StatusCard domain="Cognitive"score={78} status="On Track" color="green"  icon={Lightbulb}      delay={0.4} />
+            <StatusCard domain="Motor"    score={motorScore?.score ?? 85}  status={motorScore?.status  ?? "On Track"} color={statusColor(motorScore?.status)}  icon={Activity}      delay={0.1} />
+            <StatusCard domain="Language" score={speechScore?.score ?? 68} status={speechScore?.status ?? "Monitor"}  color={statusColor(speechScore?.status)} icon={MessageCircle} delay={0.2} />
+            <StatusCard domain="Social"   score={socialScore?.score ?? 78} status={socialScore?.status ?? "On Track"} color={statusColor(socialScore?.status)} icon={Users}         delay={0.3} />
+            <StatusCard domain="Cognitive"score={cogScore?.score ?? 82}    status={cogScore?.status    ?? "On Track"} color={statusColor(cogScore?.status)}    icon={Lightbulb}     delay={0.4} />
           </div>
 
           <motion.div

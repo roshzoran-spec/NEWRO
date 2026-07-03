@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInMonths } from "date-fns";
+import { loadMilestoneAnswers, computeDomainScores } from "@/hooks/useMilestoneScores";
 
 interface Child {
   id: string;
@@ -35,24 +36,9 @@ const DOMAIN_CONFIG = [
 ];
 
 /**
- * Derive domain scores from milestone question answers
- * answers: { [questionId]: 0 | 0.5 | 1 }
- * questions: list of all questions used
+ * Derive domain scores from milestone question answers — delegated to shared hook.
+ * Kept for statusBadgeClass and overallScore usage in this component.
  */
-const computeDomainScores = (
-  answers: Record<string, number>,
-  questions: Array<{ id: string; domain: string }>
-): DomainScore[] => {
-  return DOMAIN_CONFIG.map(({ id }) => {
-    const dqs = questions.filter((q) => q.domain === id);
-    if (dqs.length === 0) return { domain: id, score: 75, status: "On Track" };
-    const total = dqs.reduce((sum, q) => sum + (answers[q.id] ?? 0.75), 0);
-    const pct = Math.round((total / dqs.length) * 100);
-    const status: "On Track" | "Monitor" | "Needs Attention" =
-      pct >= 75 ? "On Track" : pct >= 50 ? "Monitor" : "Needs Attention";
-    return { domain: id, score: pct, status };
-  });
-};
 
 const statusBadgeClass = (s: string) =>
   s === "On Track"
@@ -70,7 +56,7 @@ const Milestones = () => {
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Accept answers passed back from MilestoneQuestions
+  // Accept answers passed back from MilestoneQuestions (or fall back to localStorage)
   const incomingAnswers: Record<string, number> | undefined = (location.state as any)?.answers;
   const [answers] = useState<Record<string, number>>(incomingAnswers ?? {});
 
@@ -108,17 +94,11 @@ const Milestones = () => {
   const ageAppropriateMilestones = useMemo(() => getQuestionsForAge(ageMonths), [ageMonths]);
 
   const domainScores = useMemo(() => {
-    const hasAnswers = Object.keys(answers).length > 0;
-    if (!hasAnswers) {
-      return [
-        { domain: "speech",    score: 68, status: "Monitor"  as const },
-        { domain: "motor",     score: 85, status: "On Track" as const },
-        { domain: "social",    score: 78, status: "On Track" as const },
-        { domain: "cognitive", score: 82, status: "On Track" as const },
-      ];
-    }
-    return computeDomainScores(answers, ageAppropriateMilestones);
-  }, [answers, ageAppropriateMilestones]);
+    // Prefer answers passed via nav state; fall back to localStorage for this child
+    const saved = selectedChild ? loadMilestoneAnswers(selectedChild.id) : {};
+    const effective = Object.keys(answers).length > 0 ? answers : saved;
+    return computeDomainScores(effective, ageMonths);
+  }, [answers, selectedChild, ageMonths]);
 
   const overallScore = Math.round(domainScores.reduce((s, d) => s + d.score, 0) / domainScores.length);
   const overallStatus = domainScores.some(d => d.status === "Needs Attention")
@@ -209,7 +189,7 @@ const Milestones = () => {
                     size="lg"
                     className="rounded-full shadow-glow font-black group uppercase tracking-widest text-sm"
                     onClick={() => navigate("/milestones/questions", {
-                      state: { ageMonths, childName: selectedChild.name }
+                      state: { ageMonths, childName: selectedChild.name, childId: selectedChild.id }
                     })}
                   >
                     <Sparkles className="w-4 h-4 mr-2" />
@@ -448,7 +428,7 @@ const Milestones = () => {
                   <Button
                     className="rounded-full px-8 h-12 font-black whitespace-nowrap shadow-glow uppercase tracking-widest text-sm"
                     onClick={() => navigate("/milestones/questions", {
-                      state: { ageMonths, childName: selectedChild.name }
+                      state: { ageMonths, childName: selectedChild.name, childId: selectedChild.id }
                     })}
                   >
                     Start Update
