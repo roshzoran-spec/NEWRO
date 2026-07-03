@@ -34,6 +34,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { LogoWatermark } from "@/components/ui/LogoWatermark";
 
 interface Child {
   id: string;
@@ -112,11 +113,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const StatusCard = ({ domain, status, color, icon: Icon, delay = 0, score }: any) => {
-  const cfg: Record<string, { ring: string; text: string; bg: string; bar: string }> = {
-    green:  { ring: "border-emerald-300", text: "text-emerald-700",  bg: "bg-emerald-50",  bar: "bg-emerald-500" },
-    yellow: { ring: "border-amber-300",   text: "text-amber-700",    bg: "bg-amber-50",    bar: "bg-amber-500"   },
-    blue:   { ring: "border-blue-300",    text: "text-blue-700",     bg: "bg-blue-50",     bar: "bg-blue-500"    },
-    red:    { ring: "border-rose-300",    text: "text-rose-700",     bg: "bg-rose-50",     bar: "bg-rose-500"    },
+  const cfg: Record<string, { ring: string; text: string; bg: string; bar: string; shadow: string }> = {
+    green:  { ring: "border-emerald-300", text: "text-emerald-500",  bg: "bg-emerald-500/10",  bar: "bg-emerald-500", shadow: "shadow-[0_0_10px_rgba(16,185,129,0.5)]" },
+    yellow: { ring: "border-amber-300",   text: "text-amber-500",    bg: "bg-amber-500/10",    bar: "bg-amber-500",   shadow: "shadow-[0_0_10px_rgba(245,158,11,0.5)]" },
+    blue:   { ring: "border-blue-300",    text: "text-blue-500",     bg: "bg-blue-500/10",     bar: "bg-blue-500",    shadow: "shadow-[0_0_10px_rgba(59,130,246,0.5)]" },
+    red:    { ring: "border-rose-300",    text: "text-rose-500",     bg: "bg-rose-500/10",     bar: "bg-rose-500",    shadow: "shadow-[0_0_10px_rgba(244,63,94,0.5)]" },
   };
   const c = cfg[color];
   return (
@@ -124,20 +125,25 @@ const StatusCard = ({ domain, status, color, icon: Icon, delay = 0, score }: any
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
-      className={`p-4 rounded-3xl border ${c.ring} ${c.bg} shadow-sm hover:shadow-md transition-all cursor-default`}
+      className={`relative p-5 rounded-[2rem] border border-white/60 bg-white/40 backdrop-blur-md shadow-sm hover:shadow-lg transition-all cursor-default overflow-hidden group hover:border-${color}-300/50`}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className={`w-9 h-9 rounded-2xl bg-white shadow-sm flex items-center justify-center ${c.text}`}>
-          <Icon size={18} />
+      <div className={`absolute -top-10 -left-10 w-32 h-32 rounded-full blur-3xl ${c.bg} group-hover:scale-150 transition-transform duration-700 pointer-events-none`} />
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-4">
+          <div className={`w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center ${c.text}`}>
+            <Icon size={20} className="drop-shadow-sm" />
+          </div>
+          <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full bg-white/90 shadow-sm ${c.text}`}>
+            {status}
+          </span>
         </div>
-        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full bg-white/80 ${c.text}`}>{status}</span>
-      </div>
-      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{domain}</p>
-      <div className="flex items-end gap-1 mb-2">
-        <span className="text-xl font-black tracking-tighter text-slate-900">{score}%</span>
-      </div>
-      <div className="h-1.5 w-full bg-white/80 rounded-full overflow-hidden">
-        <div className={`h-full ${c.bar} rounded-full transition-all`} style={{ width: `${score}%` }} />
+        <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">{domain}</p>
+        <div className="flex items-end gap-1 mb-3">
+          <span className="text-3xl font-black tracking-tighter text-slate-900">{score}%</span>
+        </div>
+        <div className="h-2 w-full bg-black/5 rounded-full overflow-hidden shadow-inner flex items-center">
+          <div className={`h-full ${c.bar} rounded-full transition-all ${c.shadow}`} style={{ width: `${score}%` }} />
+        </div>
       </div>
     </motion.div>
   );
@@ -169,16 +175,17 @@ const DashboardOverview = ({ child, parentName, assessments = [] }: DashboardOve
   };
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-8 pb-12 relative">
+      <LogoWatermark opacity={0.04} />
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <motion.h1
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="text-4xl font-black tracking-tighter text-foreground mb-1"
+            className="text-4xl md:text-5xl font-black tracking-tighter text-foreground mb-1"
           >
-            Welcome back, {parentName?.split(" ")[0] || "Parent"} 👋
+            Welcome back, <span className="text-gradient-newro">{parentName?.split(" ")[0] || "Parent"}</span> 👋
           </motion.h1>
           <p className="text-muted-foreground font-bold tracking-tight">
             Here is <span className="text-primary">{child.name}'s</span> development intelligence overview for today.
@@ -226,25 +233,27 @@ const DashboardOverview = ({ child, parentName, assessments = [] }: DashboardOve
             <StatusCard domain="Cognitive"score={78} status="On Track" color="green"  icon={Lightbulb}      delay={0.4} />
           </div>
 
-          {/* AI Insight */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5 }}
-            className="p-6 rounded-[2.5rem] bg-gradient-to-br from-primary/5 via-ai-purple/5 to-transparent border border-primary/20 shadow-glow-soft group"
+            className="p-6 rounded-[2.5rem] bg-gradient-to-br from-primary/10 via-ai-purple/10 to-transparent border border-primary/30 shadow-glow-soft relative overflow-hidden group"
           >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-xl bg-primary/10 text-primary group-hover:rotate-12 transition-transform">
-                <Sparkles size={18} />
+            <div className="absolute inset-0 bg-primary/5 blur-2xl group-hover:bg-primary/20 transition-colors duration-700" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-xl bg-primary text-white shadow-glow group-hover:rotate-12 transition-transform">
+                  <Sparkles size={18} />
+                </div>
+                <h4 className="text-sm font-black uppercase tracking-[0.2em] text-primary drop-shadow-sm">AI Development Insight</h4>
               </div>
-              <h4 className="text-sm font-black uppercase tracking-[0.2em] text-primary">AI Development Insight</h4>
+              <p className="text-sm font-bold leading-relaxed text-foreground/90 mb-5">
+                "Language development is slightly below expected range. Early stimulation activities and increased verbal interaction are recommended this week."
+              </p>
+              <Button variant="link" className="p-0 h-auto text-xs font-black uppercase text-primary tracking-widest hover:gap-2 transition-all group/btn">
+                See Therapy Plan <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+              </Button>
             </div>
-            <p className="text-sm font-bold leading-relaxed text-foreground/80 mb-5">
-              "Language development is slightly below expected range. Early stimulation activities and increased verbal interaction are recommended this week."
-            </p>
-            <Button variant="link" className="p-0 h-auto text-xs font-black uppercase text-primary tracking-widest hover:gap-2 transition-all">
-              See Therapy Plan <ArrowRight size={14} />
-            </Button>
           </motion.div>
         </div>
 

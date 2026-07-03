@@ -360,11 +360,10 @@ const ParentDashboard = () => {
       <div className="min-h-screen bg-gradient-newro flex flex-col items-center justify-center p-4">
         <header className="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-md border-b border-white/40">
            <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-gradient-cta flex items-center justify-center shadow-glow">
-                <Brain className="w-5 h-5 text-white" />
+            <Link to="/" className="flex items-center gap-3">
+              <div className="h-14 w-auto drop-shadow-md">
+                <img src="/logo.png" alt="Newro" className="h-full w-auto object-contain mix-blend-darken" />
               </div>
-              <span className="font-display font-bold text-2xl tracking-tight text-foreground">Newro</span>
             </Link>
             <Button variant="ghost" size="icon" onClick={handleSignOut} className="rounded-full" disabled={loggingOut}>
               <LogOut className="w-5 h-5" />
@@ -388,36 +387,36 @@ const ParentDashboard = () => {
                 <Plus className="w-5 h-5 mr-2" /> Add Child Profile
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] glass-panel-dark border-white/20 text-white rounded-[2rem] p-0 overflow-hidden">
+            <DialogContent className="sm:max-w-[500px] glass-panel border-white/60 text-foreground rounded-[2rem] p-0 overflow-hidden shadow-2xl">
                <div className="p-8">
                  <DialogHeader className="mb-6">
-                    <DialogTitle className="text-2xl font-bold">Add Child Profile</DialogTitle>
+                    <DialogTitle className="text-2xl font-black tracking-tight text-foreground">Add Child Profile</DialogTitle>
                  </DialogHeader>
                  <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="text-white/60">Child's Name</Label>
-                      <Input id="name" placeholder="Enter name" className="bg-white/10 border-white/10 text-white h-12 rounded-xl" value={newChild.name} onChange={(e) => setNewChild({...newChild, name: e.target.value})} />
+                      <Label htmlFor="name" className="text-muted-foreground font-bold uppercase tracking-widest text-xs">Child's Name</Label>
+                      <Input id="name" placeholder="Enter name" className="bg-white/50 border-white/60 text-foreground h-12 rounded-xl font-medium shadow-inner" value={newChild.name} onChange={(e) => setNewChild({...newChild, name: e.target.value})} />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="dob" className="text-white/60">Date of Birth</Label>
-                      <Input id="dob" type="date" className="bg-white/10 border-white/10 text-white h-12 rounded-xl" value={newChild.dob} onChange={(e) => setNewChild({...newChild, dob: e.target.value})} />
+                      <Label htmlFor="dob" className="text-muted-foreground font-bold uppercase tracking-widest text-xs">Date of Birth</Label>
+                      <Input id="dob" type="date" className="bg-white/50 border-white/60 text-foreground h-12 rounded-xl font-medium shadow-inner" value={newChild.dob} onChange={(e) => setNewChild({...newChild, dob: e.target.value})} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-white/60">Gender</Label>
+                        <Label className="text-muted-foreground font-bold uppercase tracking-widest text-xs">Gender</Label>
                         <Select value={newChild.gender} onValueChange={(v) => setNewChild({...newChild, gender: v})}>
-                          <SelectTrigger className="bg-white/10 border-white/10 text-white h-12 rounded-xl">
+                          <SelectTrigger className="bg-white/50 border-white/60 text-foreground h-12 rounded-xl font-medium shadow-inner">
                             <SelectValue placeholder="Select" />
                           </SelectTrigger>
-                          <SelectContent className="glass-panel text-foreground">
-                            <SelectItem value="male">Male</SelectItem>
-                            <SelectItem value="female">Female</SelectItem>
-                            <SelectItem value="unknown">Prefer not to say</SelectItem>
+                          <SelectContent className="glass-panel border-white/60 rounded-xl overflow-hidden shadow-xl p-1 text-foreground flex flex-col gap-1">
+                            <SelectItem value="male" className="rounded-lg font-medium cursor-pointer">Male</SelectItem>
+                            <SelectItem value="female" className="rounded-lg font-medium cursor-pointer">Female</SelectItem>
+                            <SelectItem value="unknown" className="rounded-lg font-medium cursor-pointer">Prefer not to say</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
-                    <Button onClick={handleAddChild} className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 font-bold mt-4 shadow-glow" disabled={addingChild}>
+                    <Button onClick={handleAddChild} className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest mt-4 shadow-glow" disabled={addingChild}>
                       {addingChild && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                       Create Profile
                     </Button>
@@ -438,11 +437,11 @@ const ParentDashboard = () => {
       {/* Header */}
       <header className="bg-white/70 backdrop-blur-md border-b border-white/40 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-cta flex items-center justify-center shadow-glow">
-              <Brain className="w-5 h-5 text-white" />
+          <Link to="/" className="flex items-center gap-3">
+            <div className="h-16 w-auto drop-shadow-md overflow-visible relative group">
+              <div className="absolute inset-0 bg-primary/10 blur-xl rounded-full scale-150 group-hover:bg-primary/20 transition-colors" />
+              <img src="/logo.png" alt="Newro" className="h-full w-auto object-contain mix-blend-darken relative z-10" />
             </div>
-            <span className="font-display font-bold text-2xl tracking-tight text-foreground">Newro</span>
           </Link>
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 border border-white/40 text-sm">
@@ -474,47 +473,50 @@ const ParentDashboard = () => {
                     <Plus className="w-4 h-4 mr-1" /> Add
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add a Child</DialogTitle>
+                <DialogContent className="sm:max-w-[500px] glass-panel border-white/60 text-foreground rounded-[2rem] p-8 overflow-hidden shadow-2xl">
+                  <DialogHeader className="mb-2">
+                    <DialogTitle className="text-xl font-black tracking-tight text-foreground">Add a Child</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4 mt-4">
-                    <div>
-                      <Label>Name</Label>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground font-bold uppercase tracking-widest text-xs">Name</Label>
                       <Input
                         placeholder="Child's name"
+                        className="bg-white/50 border-white/60 text-foreground h-12 rounded-xl font-medium shadow-inner"
                         value={newChild.name}
                         onChange={e => setNewChild({ ...newChild, name: e.target.value })}
                       />
                     </div>
-                    <div>
-                      <Label>Date of Birth</Label>
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground font-bold uppercase tracking-widest text-xs">Date of Birth</Label>
                       <Input
                         type="date"
+                        className="bg-white/50 border-white/60 text-foreground h-12 rounded-xl font-medium shadow-inner"
                         value={newChild.dob}
                         onChange={e => setNewChild({ ...newChild, dob: e.target.value })}
                       />
                     </div>
-                    <div>
-                      <Label>Gender</Label>
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground font-bold uppercase tracking-widest text-xs">Gender</Label>
                       <Select value={newChild.gender} onValueChange={v => setNewChild({ ...newChild, gender: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="unknown">Prefer not to say</SelectItem>
+                        <SelectTrigger className="bg-white/50 border-white/60 text-foreground h-12 rounded-xl font-medium shadow-inner"><SelectValue /></SelectTrigger>
+                        <SelectContent className="glass-panel border-white/60 rounded-xl overflow-hidden shadow-xl p-1 text-foreground flex flex-col gap-1">
+                          <SelectItem value="male" className="rounded-lg font-medium cursor-pointer">Male</SelectItem>
+                          <SelectItem value="female" className="rounded-lg font-medium cursor-pointer">Female</SelectItem>
+                          <SelectItem value="unknown" className="rounded-lg font-medium cursor-pointer">Prefer not to say</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label>Notes (optional)</Label>
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground font-bold uppercase tracking-widest text-xs">Notes (optional)</Label>
                       <Textarea
                         placeholder="Any additional info..."
+                        className="bg-white/50 border-white/60 text-foreground rounded-xl font-medium resize-none min-h-[100px] shadow-inner py-3"
                         value={newChild.notes}
                         onChange={e => setNewChild({ ...newChild, notes: e.target.value })}
                       />
                     </div>
-                    <Button className="w-full" onClick={handleAddChild} disabled={addingChild}>
+                    <Button className="w-full h-12 rounded-xl font-black tracking-widest text-white uppercase shadow-glow hover:bg-primary/90 mt-2" onClick={handleAddChild} disabled={addingChild}>
                       {addingChild && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                       Add Child
                     </Button>
@@ -541,18 +543,18 @@ const ParentDashboard = () => {
                       className="w-full"
                     >
                       <div
-                        className={`cursor-pointer transition-all p-4 rounded-2xl border flex items-center justify-between group overflow-hidden relative ${
+                        className={`cursor-pointer transition-all p-4 rounded-[2rem] border flex items-center justify-between group overflow-hidden relative ${
                           selectedChild?.id === child.id 
-                            ? "border-primary bg-white/90 shadow-glow-ai ring-1 ring-primary/20" 
-                            : "border-white/60 bg-white/40 hover:border-primary/40 hover:bg-white/60 backdrop-blur-sm"
+                            ? "border-primary/40 bg-gradient-to-r from-primary/10 to-transparent shadow-glow ring-1 ring-primary/20" 
+                            : "border-white/50 bg-white/40 hover:border-primary/30 hover:bg-white/60 backdrop-blur-md shadow-sm"
                         }`}
                         onClick={() => setSelectedChild(child)}
                       >
-                        <div className="flex items-center gap-4">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
-                            selectedChild?.id === child.id ? "bg-primary text-white" : "bg-primary/10 text-primary"
+                        <div className="flex items-center gap-4 relative z-10">
+                          <div className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center transition-all shadow-sm ${
+                            selectedChild?.id === child.id ? "bg-gradient-to-br from-[#6FE7DD] to-[#7AA7FF] text-white shadow-primary/30" : "bg-white/80 text-primary border border-white/60"
                           }`}>
-                            <Baby className="w-6 h-6" />
+                            <Baby className="w-7 h-7" />
                           </div>
                           <div>
                             <p className="font-bold text-foreground">{child.name}</p>
@@ -578,12 +580,22 @@ const ParentDashboard = () => {
           <div className="lg:col-span-3">
             {selectedChild ? (
               <Tabs value={activeMainTab} onValueChange={handleDashboardTabChange} className="space-y-6">
-                <TabsList className="bg-muted">
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="milestones">Milestones</TabsTrigger>
-                  <TabsTrigger value="video-screening">Video Screening</TabsTrigger>
-                  <TabsTrigger value="history">Assessment History</TabsTrigger>
-                  <TabsTrigger value="reminders">Reminders</TabsTrigger>
+                <TabsList className="bg-transparent flex flex-wrap gap-2 w-full justify-start p-0">
+                  <TabsTrigger value="overview" className="rounded-full px-5 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-glow-soft text-muted-foreground hover:text-foreground font-black text-xs uppercase tracking-widest transition-all data-[state=active]:border-primary border border-transparent shadow-sm bg-white/40 backdrop-blur-sm">
+                    <TrendingUp className="w-4 h-4 mr-2" /> Overview
+                  </TabsTrigger>
+                  <TabsTrigger value="milestones" className="rounded-full px-5 py-2.5 data-[state=active]:border-primary border border-transparent shadow-sm bg-white/40 backdrop-blur-sm data-[state=active]:bg-white data-[state=active]:text-primary text-muted-foreground hover:text-foreground font-black text-xs uppercase tracking-widest transition-all">
+                    <Activity className="w-4 h-4 mr-2" /> Milestones
+                  </TabsTrigger>
+                  <TabsTrigger value="video-screening" className="rounded-full px-5 py-2.5 data-[state=active]:border-primary border border-transparent shadow-sm bg-white/40 backdrop-blur-sm data-[state=active]:bg-white data-[state=active]:text-primary text-muted-foreground hover:text-foreground font-black text-xs uppercase tracking-widest transition-all">
+                    <Video className="w-4 h-4 mr-2" /> Video Screening
+                  </TabsTrigger>
+                  <TabsTrigger value="history" className="rounded-full px-5 py-2.5 data-[state=active]:border-primary border border-transparent shadow-sm bg-white/40 backdrop-blur-sm data-[state=active]:bg-white data-[state=active]:text-primary text-muted-foreground hover:text-foreground font-black text-xs uppercase tracking-widest transition-all">
+                    <ClipboardList className="w-4 h-4 mr-2" /> History
+                  </TabsTrigger>
+                  <TabsTrigger value="reminders" className="rounded-full px-5 py-2.5 data-[state=active]:border-primary border border-transparent shadow-sm bg-white/40 backdrop-blur-sm data-[state=active]:bg-white data-[state=active]:text-primary text-muted-foreground hover:text-foreground font-black text-xs uppercase tracking-widest transition-all">
+                    <Bell className="w-4 h-4 mr-2" /> Reminders
+                  </TabsTrigger>
                 </TabsList>
 
                 {/* Overview Tab */}

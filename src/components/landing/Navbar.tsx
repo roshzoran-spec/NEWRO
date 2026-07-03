@@ -26,13 +26,13 @@ const Navbar = () => {
 
   return (
     <nav className={`fixed left-0 right-0 z-50 px-4 transition-all duration-500 ${scrolled ? 'top-3' : 'top-6'}`}>
-      <div className={`container mx-auto h-16 rounded-full flex items-center justify-between px-6 backdrop-blur-xl transition-all duration-500 ${
+      <div className={`container mx-auto h-20 rounded-full flex items-center justify-between px-6 backdrop-blur-xl transition-all duration-500 ${
         scrolled
           ? 'bg-white/90 border border-white/80 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.12)]'
           : 'bg-white/60 border border-white/60 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.06)]'
       }`}>
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="h-12 w-auto group-hover:rotate-2 group-hover:scale-105 transition-all duration-500 drop-shadow-md overflow-hidden bg-transparent">
+          <div className="h-20 w-auto group-hover:rotate-2 group-hover:scale-105 transition-all duration-500 drop-shadow-md overflow-visible bg-transparent py-1">
             <img src="/logo.png" alt="Newro" className="h-full w-auto object-contain mix-blend-darken" />
           </div>
         </Link>

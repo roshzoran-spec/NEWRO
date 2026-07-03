@@ -7,6 +7,7 @@ import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceL
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import MilestoneTrackerPreview from "@/components/landing/MilestoneTrackerPreview";
+import { LogoWatermark } from "@/components/ui/LogoWatermark";
 
 const aaravData = [
   { age: 1.0, motor: 20, language: 15, social: 18 },
@@ -214,6 +215,7 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center pt-40 pb-10 overflow-hidden bg-gradient-newro selection:bg-primary/30">
+      <LogoWatermark opacity={0.05} />
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <motion.div 
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] rounded-full bg-gradient-to-tr from-primary/5 via-accent/5 to-transparent blur-[120px]"
