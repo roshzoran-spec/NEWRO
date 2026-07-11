@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Brain, ChevronDown, Activity, MessageCircle, Users, Plus, Sparkles as SparklesIcon } from "lucide-react";
@@ -27,7 +27,7 @@ const generateMockData = (baseSeed: number) => {
   ];
 };
 
-const ChildCard = ({ age, data, delay = 0 }: { age: string; data: any[]; delay?: number }) => {
+const ChildCard = memo(({ age, data, delay = 0 }: { age: string; data: any[]; delay?: number }) => {
   const currentAgeNum = parseFloat(age.split(' ')[0]);
 
   return (
@@ -119,9 +119,9 @@ const ChildCard = ({ age, data, delay = 0 }: { age: string; data: any[]; delay?:
                   return null;
                 }}
               />
-              <Area animationDuration={2000} type="monotone" dataKey="motor" stroke="#10B981" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorMotor-demo)`} name="Motor" />
-              <Area animationDuration={2500} type="monotone" dataKey="language" stroke="#3B82F6" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorLang-demo)`} name="Language" />
-              <Area animationDuration={3000} type="monotone" dataKey="social" stroke="#8B5CF6" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorSocial-demo)`} name="Social" />
+              <Area isAnimationActive={false} type="monotone" dataKey="motor" stroke="#10B981" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorMotor-demo)`} name="Motor" />
+              <Area isAnimationActive={false} type="monotone" dataKey="language" stroke="#3B82F6" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorLang-demo)`} name="Language" />
+              <Area isAnimationActive={false} type="monotone" dataKey="social" stroke="#8B5CF6" strokeWidth={2.5} fillOpacity={1} fill={`url(#colorSocial-demo)`} name="Social" />
               
               {/* Reference line for child's current age */}
               <ReferenceLine 
@@ -150,7 +150,9 @@ const ChildCard = ({ age, data, delay = 0 }: { age: string; data: any[]; delay?:
       </div>
     </motion.div>
   );
-};
+});
+
+ChildCard.displayName = "ChildCard";
 
 const StatusItem = ({ icon, label, status, color }: { icon: any; label: string; status: string; color: string }) => {
   const colorMap: any = {

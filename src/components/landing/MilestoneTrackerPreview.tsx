@@ -290,9 +290,9 @@ const MilestoneTrackerPreview = () => {
                     type="monotone"
                     dataKey="rangeRed"
                     stroke="none"
-                    fill="#FEE2E2" // Tailwinds red-100
+                    fill="#FEE2E2"
                     fillOpacity={0.6}
-                    isAnimationActive={true}
+                    isAnimationActive={false}
                     name="Delay Zone"
                     activeDot={false}
                   />
@@ -302,9 +302,9 @@ const MilestoneTrackerPreview = () => {
                     type="monotone"
                     dataKey="rangeYellow"
                     stroke="none"
-                    fill="#FEF3C7" // Tailwinds amber-100
+                    fill="#FEF3C7"
                     fillOpacity={0.6}
-                    isAnimationActive={true}
+                    isAnimationActive={false}
                     name="Watch Zone"
                     activeDot={false}
                   />
@@ -314,9 +314,9 @@ const MilestoneTrackerPreview = () => {
                     type="monotone"
                     dataKey="rangeGreen"
                     stroke="none"
-                    fill="#D1FAE5" // Tailwinds emerald-100
+                    fill="#D1FAE5"
                     fillOpacity={0.5}
-                    isAnimationActive={true}
+                    isAnimationActive={false}
                     name="Normal Range"
                     activeDot={false}
                   />
